@@ -1,0 +1,59 @@
+{
+  "applicationID": 1,
+  "applicationName": "TestApp",
+  "deviceName": "TestDevice-001",
+  "devEUI": "aa555a0026012345",
+  "deviceProfileID": "c7eef5c8-4063-4e2b-a123-1234567890ab",
+  "deviceProfile": {
+    "id": "c7eef5c8-4063-4e2b-a123-1234567890ab",
+    "name": "TestDeviceProfile",
+    "vendor": "TestVendor",
+    "description": "Test device profile",
+    "region": "EU868",
+    "macVersion": "1.0.3",
+    "regParamsRevision": "A"
+  },
+  "devAddr": "01234567",
+  "adr": true,
+  "dr": 5,
+  "fCnt": 123,
+  "fPort": 1,
+  "data": "SGVsbG8gV29ybGQ=",
+  "object": {
+    "temperature": 23.5,
+    "humidity": 65,
+    "battery": 3.7
+  },
+  "tags": {
+    "location": "office",
+    "type": "sensor"
+  },
+  "variables": {},
+  "confirmedUplink": false,
+  "txInfo": {
+    "frequency": 868100000,
+    "modulation": "LORA",
+    "loRaModulationInfo": {
+      "bandwidth": 125,
+      "spreadingFactor": 7,
+      "codeRate": "4/5"
+    }
+  },
+  "rxInfo": [
+    {
+      "gatewayID": "aa555a0000000000",
+      "uplinkID": "12345678-1234-1234-1234-123456789abc",
+      "rssi": -45,
+      "snr": 7.2,
+      "channel": 0,
+      "rfChain": 0,
+      "location": {
+        "latitude": 52.1234,
+        "longitude": 4.5678,
+        "altitude": 10
+      },
+      "antenna": 0
+    }
+  ],
+  "publishedAt": "2023-01-01T12:00:00Z"
+}

@@ -1,0 +1,24 @@
+# Server Configuration
+server:
+  port: 8080
+  log_level: "info"
+  read_timeout: 30
+  write_timeout: 30
+  idle_timeout: 60
+
+# MQTT Broker Configuration
+mqtt:
+  broker: "localhost"
+  port: 1883
+  client_id: "mpa-service"
+  username: ""
+  password: ""
+  topic: "mpa/devices/data"
+  qos: 0
+  retained: false
+
+# Protocol Configuration
+protocols:
+  chirpstack:
+    enabled: true
+    path: "/chirpstack"
