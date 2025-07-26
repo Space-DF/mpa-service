@@ -1,31 +1,55 @@
 # MPA - Multi-Protocol Agent
 
-A Golang service that receives device payloads from multiple IoT protocols via HTTP and forwards them to an MQTT broker. Designed as a Multi-Protocol Agent (MPA) that can handle various IoT data sources with a unified interface.
+A comprehensive IoT protocol gateway that automatically detects device types and normalizes data from multiple transport protocols into a unified MQTT stream. The MPA service acts as a smart intermediary that can handle various IoT devices and communication protocols while providing a standardized output format.
 
-## Features
+## ✨ Features
 
-- 🔄 Multi-protocol support (ChirpStack, and extensible for other protocols)
-- 📡 Publishes device data to MQTT broker in unified JSON format
-- ⚡ Graceful shutdown with signal handling
-- 🔧 Configurable via YAML config file and environment variables
-- 🏥 Health check endpoints for each protocol
-- 📝 Structured logging
-- 🚀 Extensible architecture for adding new protocols
+- 🌐 **Multi-Transport Support** - HTTP, MQTT Subscriber, WebSocket, SocketIO
+- 🔍 **Automatic Device Detection** - Path, header, payload, and rule-based detection
+- 🏭 **Device-Specific Parsing** - RAK2270, RAK7200, Dragino LHT65, and extensible
+- 📡 **Unified MQTT Output** - All devices publish to standardized MQTT format
+- 🔄 **Backward Compatible** - Existing ChirpStack integrations work unchanged
+- ⚡ **Real-time Communication** - WebSocket and SocketIO for live data
+- 🔧 **Runtime Management** - Dynamic device profile and parser registration
+- 🏥 **Comprehensive Health Monitoring** - Per-transport and global health checks
+- 📝 **Structured Logging** - Detailed operational insights
+- 🚀 **Horizontally Scalable** - Multiple concurrent connections and protocols
 
-## Architecture
+## 🏗️ Architecture
 
 ```
-┌─────────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
-│   ChirpStack    │───▶│     MPA      │───▶│    MQTT     │───▶│ MQTT Broker  │
-│   (LoRaWAN)     │    │   Service    │    │  Publisher  │    │              │
-└─────────────────┘    └──────────────┘    └─────────────┘    └──────────────┘
-                                │
-                                ▼
-                       ┌──────────────┐
-                       │  Additional  │
-                       │  Protocols   │
-                       │  (Future)    │
-                       └──────────────┘
+IoT Devices (Various Makes/Models)
+     ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Transport Protocols                      │
+├─────────────┬─────────────┬─────────────┬─────────────────┤
+│    HTTP     │    MQTT     │  WebSocket  │    SocketIO     │
+│  POST /http │ Subscriber  │   /ws       │  /socket.io/    │
+└─────────────┴─────────────┴─────────────┴─────────────────┘
+     ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Device Detection                          │
+├─────────────┬─────────────┬─────────────┬─────────────────┤
+│    Path     │   Header    │   Payload   │     Rules       │
+│   Based     │    Based    │   Analysis  │  Conditional    │
+└─────────────┴─────────────┴─────────────┴─────────────────┘
+     ↓
+┌─────────────────────────────────────────────────────────────┐
+│                Device-Specific Parsers                      │
+├─────────────┬─────────────┬─────────────┬─────────────────┤
+│   RAK2270   │   RAK7200   │ Dragino LHT │ Generic LoRaWAN │
+│   Tracker   │   EnvSensor │    65       │   (fallback)    │
+└─────────────┴─────────────┴─────────────┴─────────────────┘
+     ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 Unified MQTT Output                         │
+│            (Standardized Message Format)                    │
+└─────────────────────────────────────────────────────────────┘
+     ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   MQTT Broker                              │
+│              (Your Main Data Stream)                        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -112,14 +136,42 @@ export MQTT_USERNAME=myuser
 export MQTT_PASSWORD=mypass
 ```
 
-### Protocol Configuration
+### Transport Protocol Configuration
 
 ```yaml
 protocols:
-  chirpstack:
+  # Generic HTTP transport (recommended)
+  http:
     enabled: true
-    path: "/chirpstack"          # Endpoint path for ChirpStack
+    path: "/http"                # Universal endpoint for all HTTP devices
+  
+  # WebSocket transport
+  websocket:
+    enabled: true
+    path: "/ws"
+    port: 8082
+  
+  # MQTT subscriber transport  
+  mqtt_protocol:
+    enabled: true
+    port: 1884                   # MQTT broker port for incoming devices
+  
+  # Backward compatibility
+  chirpstack:
+    enabled: false               # Legacy endpoint (optional)
+    path: "/chirpstack"
 ```
+
+### Supported Device Types
+
+The service automatically detects these device types:
+
+- **RAK2270** - RAK Sticker Tracker (GPS/LoRaWAN)
+- **RAK7200** - RAK WisNode Track Lite (Environmental)
+- **Dragino LHT65** - Temperature & Humidity Sensor
+- **Generic LoRaWAN** - Any unidentified LoRaWAN device
+- **Generic HTTP** - Custom HTTP IoT devices
+- **Extensible** - Easy to add new device profiles
 
 ## Usage
 
@@ -128,36 +180,96 @@ protocols:
 1. In your ChirpStack Application Server:
 2. Go to Applications → [Your App] → Integrations
 3. Add HTTP Integration
-4. Set URL to: `http://your-service:8080/chirpstack`
+4. Set URL to: `http://your-mpa-service:8080/http`
 5. Set Method to: `POST`
-6. Add headers if needed (optional)
+6. Enable events: up, join, ack, txack, status, location, log, integration
 
 ### Data Format
 
-The service expects JSON payloads from ChirpStack in the following format:
+The service accepts standard ChirpStack webhook payloads and automatically detects device types:
 
+#### RAK2270 Tracker Example:
 ```json
 {
-  "applicationID": 1,
-  "applicationName": "MyApp",
-  "deviceName": "Device-001",
-  "devEUI": "aa555a0026012345",
-  "data": "SGVsbG8gV29ybGQ=",
-  "fCnt": 123,
-  "fPort": 1,
-  "rxInfo": [
-    {
-      "gatewayID": "aa555a0000000000",
-      "rssi": -45,
-      "snr": 7.2,
-      "location": {
-        "latitude": 52.1234,
-        "longitude": 4.5678,
-        "altitude": 10
+  "deduplicationId": "12345-abc-def",
+  "time": "2024-01-15T14:30:00.123456Z",
+  "event": "up",
+  "deviceInfo": {
+    "tenantId": "52f14cd4-c6f1-4fbd-8f87-4025e1d49242",
+    "tenantName": "SpaceDF",
+    "applicationId": "ca739e26-7b67-4f14-b95e-c4ca0e4c8c9e",
+    "applicationName": "Asset Trackers",
+    "deviceName": "RAK2270-Tracker-001",
+    "devEui": "1122334455667788",
+    "devAddr": "aabbccdd"
+  },
+  "uplinkEvent": {
+    "fCnt": 1543,
+    "fPort": 2,
+    "data": "AWcB6AIBAWE=",
+    "object": {
+      "latitude": 52.520008,
+      "longitude": 13.404954,
+      "altitude": 100.5,
+      "battery": 85,
+      "temperature": 23.4,
+      "motion": true
+    },
+    "rxInfo": [
+      {
+        "gatewayId": "gateway-001-berlin",
+        "rssi": -85,
+        "snr": 12.3,
+        "location": {
+          "latitude": 52.51945,
+          "longitude": 13.40443,
+          "altitude": 65.0
+        }
       }
+    ]
+  }
+}
+```
+
+#### RAK7200 Environmental Sensor Example:
+```json
+{
+  "time": "2024-01-15T14:25:12.654321Z",
+  "event": "up",
+  "deviceInfo": {
+    "tenantName": "SpaceDF",
+    "applicationName": "Environmental Monitoring",
+    "deviceName": "RAK7200-Office-A12",
+    "devEui": "9988776655443322"
+  },
+  "uplinkEvent": {
+    "fCnt": 89,
+    "fPort": 1,
+    "object": {
+      "temperature": 25.3,
+      "humidity": 65.2,
+      "pressure": 1013.25,
+      "battery": 3.6
     }
-  ],
-  "publishedAt": "2023-01-01T12:00:00Z"
+  }
+}
+```
+
+#### Generic LoRaWAN Device Example:
+```json
+{
+  "time": "2024-01-15T14:35:45.789012Z",
+  "event": "up", 
+  "deviceInfo": {
+    "deviceName": "Custom-Sensor-456",
+    "devEui": "5566778899aabbcc"
+  },
+  "uplinkEvent": {
+    "object": {
+      "temperature": 25.3,
+      "humidity": 65.2
+    }
+  }
 }
 ```
 
@@ -187,14 +299,24 @@ The service publishes the following format to MQTT:
 }
 ```
 
-## API Endpoints
+## 🌐 API Endpoints
 
-### ChirpStack Protocol
-- `POST /chirpstack` - Main webhook endpoint for ChirpStack
-- `GET /health/chirpstack` - ChirpStack handler health check
+### Transport Endpoints
+- `POST /http` - Universal HTTP endpoint (auto-detects device types)
+- `GET /ws` - WebSocket upgrade endpoint
+- `GET /socket.io/` - SocketIO endpoint
+- MQTT Subscriber - Subscribes to configured topics automatically
 
-### Global Endpoints
-- `GET /health` - Global health check (shows all active protocols)
+### Health & Monitoring
+- `GET /health` - Global service health (all transports + device profiles)
+- `GET /health/http` - HTTP transport health
+- `GET /health/websocket` - WebSocket transport health  
+- `GET /health/mqtt-subscriber` - MQTT subscriber health
+- `GET /health/socketio` - SocketIO transport health
+- `GET /device-profiles` - List all supported device types and detection rules
+
+### Backward Compatibility
+- `POST /chirpstack` - Legacy ChirpStack endpoint (if enabled)
 
 ## Extending with New Protocols
 
@@ -235,16 +357,50 @@ make test
 make dev
 ```
 
-2. Send a test payload:
+2. Test RAK2270 device:
 ```bash
-curl -X POST http://localhost:8080/chirpstack \
+curl -X POST http://localhost:8080/http \
   -H "Content-Type: application/json" \
-  -d @test_payload.json
+  -d '{
+    "event": "up",
+    "deviceInfo": {
+      "deviceName": "RAK2270-Tracker-001",
+      "devEui": "1122334455667788"
+    },
+    "uplinkEvent": {
+      "object": {
+        "latitude": 52.520008,
+        "longitude": 13.404954,
+        "battery": 85
+      }
+    }
+  }'
 ```
 
-3. Check health:
+3. Test generic device:
+```bash
+curl -X POST http://localhost:8080/http \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "sensor123",
+    "name": "Temperature Sensor",
+    "temperature": 25.5
+  }'
+```
+
+4. Check health and device profiles:
 ```bash
 curl http://localhost:8080/health
+curl http://localhost:8080/device-profiles
+```
+
+5. Test WebSocket (requires a WebSocket client):
+```javascript
+const ws = new WebSocket('ws://localhost:8080/ws');
+ws.send(JSON.stringify({
+  device_id: "ws_sensor01",
+  temperature: 22.1
+}));
 ```
 
 ## Logging
