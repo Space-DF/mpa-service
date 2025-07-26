@@ -22,3 +22,24 @@ protocols:
   chirpstack:
     enabled: true
     path: "/chirpstack"
+  
+  http:
+    enabled: false
+    path: "/http"
+  
+  sms:
+    enabled: false
+    provider: "twilio"
+    api_key: ""
+    api_secret: ""
+    webhook_url: ""
+    port: 8081
+  
+  websocket:
+    enabled: false
+    path: "/ws"
+    port: 8082
+  
+  mqtt_protocol:
+    enabled: false
+    port: 1884

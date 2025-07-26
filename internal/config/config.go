@@ -23,11 +23,41 @@ type ServerConfig struct {
 
 type ProtocolsConfig struct {
 	ChirpStack ChirpStackConfig `mapstructure:"chirpstack"`
+	HTTP       HTTPConfig       `mapstructure:"http"`
+	SMS        SMSConfig        `mapstructure:"sms"`
+	WebSocket  WebSocketConfig  `mapstructure:"websocket"`
+	MQTT       MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
 }
 
+// Protocol-specific configurations
 type ChirpStackConfig struct {
 	Enabled bool   `mapstructure:"enabled"`
 	Path    string `mapstructure:"path"`
+}
+
+type HTTPConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Path    string `mapstructure:"path"`
+}
+
+type SMSConfig struct {
+	Enabled    bool   `mapstructure:"enabled"`
+	Provider   string `mapstructure:"provider"`
+	APIKey     string `mapstructure:"api_key"`
+	APISecret  string `mapstructure:"api_secret"`
+	WebhookURL string `mapstructure:"webhook_url"`
+	Port       int    `mapstructure:"port"`
+}
+
+type WebSocketConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Path    string `mapstructure:"path"`
+	Port    int    `mapstructure:"port"`
+}
+
+type MQTTProtocolConfig struct {
+	Enabled bool `mapstructure:"enabled"`
+	Port    int  `mapstructure:"port"`
 }
 
 type MQTTConfig struct {
@@ -67,6 +97,16 @@ func New() (Config, error) {
 	vp.SetDefault("mqtt.retained", false)
 	vp.SetDefault("protocols.chirpstack.enabled", true)
 	vp.SetDefault("protocols.chirpstack.path", "/chirpstack")
+	vp.SetDefault("protocols.http.enabled", false)
+	vp.SetDefault("protocols.http.path", "/http")
+	vp.SetDefault("protocols.sms.enabled", false)
+	vp.SetDefault("protocols.sms.provider", "twilio")
+	vp.SetDefault("protocols.sms.port", 8081)
+	vp.SetDefault("protocols.websocket.enabled", false)
+	vp.SetDefault("protocols.websocket.path", "/ws")
+	vp.SetDefault("protocols.websocket.port", 8082)
+	vp.SetDefault("protocols.mqtt_protocol.enabled", false)
+	vp.SetDefault("protocols.mqtt_protocol.port", 1884)
 
 	if err := vp.ReadInConfig(); err != nil {
 		return config, err
