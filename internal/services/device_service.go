@@ -44,16 +44,30 @@ func (ds *DeviceService) initializeDefaults() {
 
 // createDefaultProfiles creates built-in device profiles
 func (ds *DeviceService) createDefaultProfiles() {
-	// ChirpStack profile - backward compatibility
-	chirpStackProfile := &models.DeviceProfile{
-		ID:          "chirpstack",
-		Make:        "chirpstack",
-		Model:       "lorawan",
+	// RAK2270 Sticker Tracker profile
+	rak2270Profile := &models.DeviceProfile{
+		ID:          "rak-2270-sticker-tracker",
+		Make:        "RAK",
+		Model:       "RAK2270",
 		Version:     "v1.0",
-		Description: "ChirpStack LoRaWAN Network Server",
+		Description: "RAK2270 RAK Sticker Tracker",
 		Detection: models.DetectionConfig{
-			Method:   models.DetectionMethodPayload,
+			Method:   models.DetectionMethodRules,
 			Priority: 100,
+			Rules: []models.DetectionRule{
+				{
+					Type:     "payload",
+					Field:    "event",
+					Operator: "exists",
+					Required: true,
+				},
+				{
+					Type:     "payload", 
+					Field:    "deviceInfo",
+					Operator: "exists",
+					Required: true,
+				},
+			},
 		},
 		Fields: map[string]string{
 			"device_id":   "deviceInfo.devEui",
@@ -61,11 +75,98 @@ func (ds *DeviceService) createDefaultProfiles() {
 			"event_type":  "event",
 		},
 		Metadata: map[string]interface{}{
-			"protocol": "chirpstack",
-			"type":     "lorawan",
+			"protocol":     "lorawan",
+			"manufacturer": "RAK Wireless",
+			"device_type":  "gps_tracker",
+			"connectivity": "lorawan",
 		},
 	}
-	ds.deviceRegistry.RegisterProfile(chirpStackProfile)
+	ds.deviceRegistry.RegisterProfile(rak2270Profile)
+	
+	// RAK7200 WisNode Track Lite profile
+	rak7200Profile := &models.DeviceProfile{
+		ID:          "rak-7200-track-lite",
+		Make:        "RAK",
+		Model:       "RAK7200",
+		Version:     "v1.0", 
+		Description: "RAK7200 WisNode Track Lite",
+		Detection: models.DetectionConfig{
+			Method:   models.DetectionMethodRules,
+			Priority: 90,
+			Rules: []models.DetectionRule{
+				{
+					Type:     "payload",
+					Field:    "event", 
+					Operator: "exists",
+					Required: true,
+				},
+				{
+					Type:     "payload",
+					Field:    "deviceInfo.deviceName",
+					Operator: "contains",
+					Value:    "RAK7200",
+					Required: false,
+				},
+			},
+		},
+		Fields: map[string]string{
+			"device_id":   "deviceInfo.devEui",
+			"device_name": "deviceInfo.deviceName", 
+			"event_type":  "event",
+		},
+		Metadata: map[string]interface{}{
+			"protocol":     "lorawan",
+			"manufacturer": "RAK Wireless",
+			"device_type":  "environmental_sensor",
+			"connectivity": "lorawan",
+		},
+	}
+	ds.deviceRegistry.RegisterProfile(rak7200Profile)
+	
+	// Generic LoRaWAN Device profile (fallback for unidentified LoRaWAN devices)
+	lorawanGenericProfile := &models.DeviceProfile{
+		ID:          "generic-lorawan",
+		Make:        "Generic",
+		Model:       "LoRaWAN",
+		Version:     "v1.0",
+		Description: "Generic LoRaWAN Device (unidentified make/model)",
+		Detection: models.DetectionConfig{
+			Method:   models.DetectionMethodRules,
+			Priority: 20, // Low priority - fallback for LoRaWAN devices
+			Rules: []models.DetectionRule{
+				{
+					Type:     "payload",
+					Field:    "event",
+					Operator: "exists",
+					Required: true,
+				},
+				{
+					Type:     "payload",
+					Field:    "deviceInfo.devEui",
+					Operator: "exists",
+					Required: true,
+				},
+				{
+					Type:     "payload",
+					Field:    "uplinkEvent",
+					Operator: "exists",
+					Required: false,
+				},
+			},
+		},
+		Fields: map[string]string{
+			"device_id":   "deviceInfo.devEui",
+			"device_name": "deviceInfo.deviceName",
+			"event_type":  "event",
+		},
+		Metadata: map[string]interface{}{
+			"protocol":     "lorawan",
+			"manufacturer": "unknown",
+			"device_type":  "generic_lorawan_device",
+			"connectivity": "lorawan",
+		},
+	}
+	ds.deviceRegistry.RegisterProfile(lorawanGenericProfile)
 	
 	// Generic HTTP profile
 	genericHTTPProfile := &models.DeviceProfile{
