@@ -49,10 +49,12 @@ func init() {
 }
 
 func runServe(cmd *cobra.Command, args []string) {
+	fmt.Println("Starting MPA Service...")
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
+	fmt.Println("Configuration loaded")
 
 	// Override config with CLI flags if provided
 	if port != 0 {
@@ -63,14 +65,25 @@ func runServe(cmd *cobra.Command, args []string) {
 	}
 
 	logger := logger.New(cfg.Server.LogLevel)
+	fmt.Println("Logger initialized")
 	
-	// Initialize MQTT client for output
-	mqttClient := mqtt.NewClient(cfg.MQTT)
-	if err := mqttClient.Connect(); err != nil {
-		logger.Errorf("Failed to connect to MQTT broker: %v", err)
-		os.Exit(1)
+	// Initialize MQTT client for output (optional for HTTP-only mode)
+	var mqttClient mqtt.ClientInterface
+	fmt.Printf("MQTT broker config: %s\n", cfg.MQTT.Broker)
+	if cfg.MQTT.Broker != "" {
+		fmt.Println("Attempting MQTT connection...")
+		mqttClientImpl := mqtt.NewClient(cfg.MQTT)
+		if err := mqttClientImpl.Connect(); err != nil {
+			fmt.Printf("MQTT connection failed: %v (continuing without MQTT)\n", err)
+			mqttClient = nil
+		} else {
+			fmt.Println("MQTT connected successfully")
+			mqttClient = mqttClientImpl
+			defer mqttClientImpl.Disconnect()
+		}
+	} else {
+		fmt.Println("No MQTT broker configured, skipping")
 	}
-	defer mqttClient.Disconnect()
 
 	// Initialize device service (shared across all transports)
 	deviceService := services.NewDeviceService(mqttClient)
