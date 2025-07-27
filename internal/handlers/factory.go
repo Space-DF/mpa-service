@@ -1,7 +1,5 @@
 package handlers
 
-import "github.com/Space-DF/mpa-service/internal/mqtt"
-
 // ProtocolHandlerFactory defines interface to create ProtocolHandlers
 type ProtocolHandlerFactory interface {
     // Name returns the protocol name

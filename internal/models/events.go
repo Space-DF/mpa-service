@@ -110,16 +110,6 @@ type EventWrapper struct {
 
 
 
-type DeviceProfile struct {
-	ID            string            `json:"id,omitempty"`
-	Name          string            `json:"name,omitempty"`
-	Vendor        string            `json:"vendor,omitempty"`
-	Description   string            `json:"description,omitempty"`
-	Region        string            `json:"region,omitempty"`
-	MACVersion    string            `json:"macVersion,omitempty"`
-	RegParamsRev  string            `json:"regParamsRevision,omitempty"`
-	ADRAlgorithm  map[string]string `json:"adrAlgorithm,omitempty"`
-}
 
 type TxInfo struct {
 	Frequency  int                    `json:"frequency,omitempty"`

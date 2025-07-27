@@ -194,7 +194,7 @@ func (h *Handler) messageHandler(client mqtt.Client, msg mqtt.Message) {
 		"topic":         msg.Topic(),
 		"qos":           msg.Qos(),
 		"retained":      msg.Retained(),
-		"duplicate":     msg.Dup(),
+		"duplicate":     msg.Duplicate(),
 		"message_id":    msg.MessageID(),
 		"received_at":   h.lastMessage.UTC().Format(time.RFC3339),
 	}

@@ -71,9 +71,6 @@ type MQTTConfig struct {
 	Retained bool   `mapstructure:"retained"`
 }
 
-type ServerConfig struct {
-	LogLevel string `mapstructure:"log_level"`
-}
 
 func New() (Config, error) {
 	var config Config

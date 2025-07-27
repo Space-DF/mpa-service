@@ -1,6 +1,7 @@
 package socketio
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -97,10 +98,7 @@ func (h *Handler) Start() error {
 	}
 	
 	// Create SocketIO server
-	server, err := socketio.NewServer(nil)
-	if err != nil {
-		return fmt.Errorf("failed to create SocketIO server: %w", err)
-	}
+	server := socketio.NewServer(nil)
 	
 	h.server = server
 	
@@ -249,7 +247,6 @@ func (h *Handler) processDeviceData(so socketio.Conn, connectionID string, data 
 		message = v
 	case map[string]interface{}:
 		// For JSON objects, marshal to bytes
-		import "encoding/json"
 		message, err = json.Marshal(v)
 		if err != nil {
 			log.Printf("SocketIO: Error marshaling data from %s: %v", connectionID, err)
@@ -294,7 +291,6 @@ func (h *Handler) processMessage(so socketio.Conn, connectionID string, data int
 	case []byte:
 		message = v
 	case map[string]interface{}:
-		import "encoding/json"
 		message, err = json.Marshal(v)
 		if err != nil {
 			log.Printf("SocketIO: Error marshaling message from %s: %v", connectionID, err)

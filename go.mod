@@ -4,7 +4,7 @@ go 1.24.4
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.0
-	github.com/googollee/go-socket.io v1.8.0
+	github.com/googollee/go-socket.io v1.7.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/spf13/cobra v1.9.1
