@@ -137,8 +137,7 @@ func (ds *DeviceService) GetDeviceProfiles() map[string]*models.DeviceProfile {
 // GetHealthStatus returns service health information
 func (ds *DeviceService) GetHealthStatus() map[string]interface{} {
 	return map[string]interface{}{
-		"mode":           "forwarding",
-		"device_profiles": 0,
+		"mode":           "forwarding",  
 		"parsers":        0,
 		"mqtt_connected": ds.mqttClient != nil && ds.mqttClient.IsConnected(),
 	}

@@ -3,11 +3,11 @@ package http
 import (
 	"fmt"
 	"io"
-	"log"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/Space-DF/mpa-service/internal/handlers"
+	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/services"
 )
 
@@ -15,6 +15,7 @@ import (
 type Handler struct {
 	deviceService *services.DeviceService
 	config        Config
+	logger        *logger.Logger
 }
 
 // Config holds HTTP transport handler configuration
@@ -23,10 +24,11 @@ type Config struct {
 }
 
 // NewHandler creates a new HTTP transport handler
-func NewHandler(deviceService *services.DeviceService, config Config) handlers.ProtocolHandler {
+func NewHandler(deviceService *services.DeviceService, config Config, logger *logger.Logger) handlers.ProtocolHandler {
 	return &Handler{
 		deviceService: deviceService,
 		config:        config,
+		logger:        logger,
 	}
 }
 
@@ -52,13 +54,16 @@ func (h *Handler) Handle(c echo.Context) error {
 	// Read request body
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		log.Printf("HTTP Transport: Error reading request body: %v", err)
+		h.logger.Errorf("HTTP Transport: Error reading request body: %v", err)
 		return echo.NewHTTPError(400, "Failed to read request body")
 	}
 	
 	// Log incoming request
-	log.Printf("HTTP Transport: Received %s request to %s from %s (body size: %d bytes)", 
+	h.logger.Infof("HTTP Transport: Received %s request to %s from %s (body size: %d bytes)", 
 		c.Request().Method, c.Request().URL.Path, c.Request().RemoteAddr, len(body))
+	
+	// Debug log: Print original message content before any processing
+	h.logger.Debugf("HTTP Transport: Original message payload:\n%s", string(body))
 	
 	// Prepare transport metadata
 	transportMetadata := map[string]interface{}{
@@ -87,7 +92,7 @@ func (h *Handler) Handle(c echo.Context) error {
 	
 	// Process message through device service
 	if err := h.deviceService.ProcessHTTPMessage(c.Request(), body, transportMetadata); err != nil {
-		log.Printf("HTTP Transport: Error processing message: %v", err)
+		h.logger.Errorf("HTTP Transport: Error processing message: %v", err)
 		
 		// Return appropriate error response based on error type
 		if fmt.Sprintf("%v", err)[:19] == "device detection failed" {
@@ -100,7 +105,7 @@ func (h *Handler) Handle(c echo.Context) error {
 	}
 	
 	processingTime := time.Since(startTime)
-	log.Printf("HTTP Transport: Successfully processed message in %v", processingTime)
+	h.logger.Infof("HTTP Transport: Successfully processed message in %v", processingTime)
 	
 	// Return success response
 	return c.JSON(200, map[string]interface{}{
@@ -121,39 +126,14 @@ func (h *Handler) HealthCheck(c echo.Context) error {
 	}
 	
 	return c.JSON(200, map[string]interface{}{
-		"transport":       "http",
-		"status":          "healthy",
-		"message":         "HTTP transport handler is running",
-		"mqtt":            "connected",
-		"device_profiles": healthStatus["device_profiles"],
-		"parsers":         healthStatus["parsers"],
-		"endpoint":        h.config.Path,
-		"method":          "POST",
-		"timestamp":       time.Now().UTC().Format(time.RFC3339),
+		"transport": "http",
+		"status":    "healthy", 
+		"message":   "HTTP transport handler is running",
+		"mqtt":      "connected",
+		"parsers":   healthStatus["parsers"],
+		"endpoint":  h.config.Path,
+		"method":    "POST",
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
-// GetDeviceProfiles returns information about supported device types
-func (h *Handler) GetDeviceProfiles() map[string]interface{} {
-	profiles := h.deviceService.GetDeviceProfiles()
-	result := make(map[string]interface{})
-	
-	for id, profile := range profiles {
-		result[id] = map[string]interface{}{
-			"make":        profile.Make,
-			"model":       profile.Model,
-			"version":     profile.Version,
-			"description": profile.Description,
-			"detection":   profile.Detection.Method,
-		}
-	}
-	
-	return result
-}
-
-// AddDeviceProfile allows runtime addition of device profiles
-func (h *Handler) AddDeviceProfile(profile interface{}) error {
-	// This would typically be called via an admin API
-	// Implementation depends on how you want to expose device management
-	return fmt.Errorf("runtime device profile addition not implemented yet")
-}

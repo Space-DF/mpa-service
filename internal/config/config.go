@@ -24,7 +24,6 @@ type ServerConfig struct {
 }
 
 type ProtocolsConfig struct {
-	ChirpStack ChirpStackConfig `mapstructure:"chirpstack"`
 	HTTP       HTTPConfig       `mapstructure:"http"`
 	SMS        SMSConfig        `mapstructure:"sms"`
 	WebSocket  WebSocketConfig  `mapstructure:"websocket"`
@@ -32,11 +31,6 @@ type ProtocolsConfig struct {
 }
 
 // Protocol-specific configurations
-type ChirpStackConfig struct {
-	Enabled bool   `mapstructure:"enabled"`
-	Path    string `mapstructure:"path"`
-}
-
 type HTTPConfig struct {
 	Enabled bool   `mapstructure:"enabled"`
 	Path    string `mapstructure:"path"`
@@ -101,9 +95,7 @@ func New() (Config, error) {
 	vp.SetDefault("mqtt.topic", "mpa/devices/data")
 	vp.SetDefault("mqtt.qos", 0)
 	vp.SetDefault("mqtt.retained", false)
-	vp.SetDefault("protocols.chirpstack.enabled", true)
-	vp.SetDefault("protocols.chirpstack.path", "/chirpstack")
-	vp.SetDefault("protocols.http.enabled", false)
+	vp.SetDefault("protocols.http.enabled", true)
 	vp.SetDefault("protocols.http.path", "/http")
 	vp.SetDefault("protocols.sms.enabled", false)
 	vp.SetDefault("protocols.sms.provider", "twilio")

@@ -258,7 +258,6 @@ func (h *Handler) HealthCheck(c echo.Context) error {
 		"status":            "healthy",
 		"message":           "WebSocket transport handler is running",
 		"mqtt_connected":    healthStatus["mqtt_connected"],
-		"device_profiles":   healthStatus["device_profiles"],
 		"parsers":           healthStatus["parsers"],
 		"endpoint":          h.config.Path,
 		"active_connections": connectionCount,

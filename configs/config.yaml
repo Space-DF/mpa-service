@@ -19,10 +19,6 @@ mqtt:
 
 # Protocol Configuration
 protocols:
-  chirpstack:
-    enabled: false
-    path: "/chirpstack"
-  
   http:
     enabled: true
     path: "/http"

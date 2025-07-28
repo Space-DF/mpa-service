@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/Space-DF/mpa-service/internal/config"
 	"github.com/Space-DF/mpa-service/internal/handlers"
-	"github.com/Space-DF/mpa-service/internal/handlers/chirpstack"
 	"github.com/Space-DF/mpa-service/internal/handlers/http"
 	"github.com/Space-DF/mpa-service/internal/handlers/mqttprotocol"
 	"github.com/Space-DF/mpa-service/internal/handlers/websocket"
@@ -35,9 +34,9 @@ var serveCmd = &cobra.Command{
 	Long: `Start the Multi-Protocol Agent (MPA) service that supports multiple
 IoT transport protocols including HTTP, MQTT, WebSocket, and SocketIO.
 
-The service automatically detects device types and formats, then publishes
-unified messages to the configured MQTT broker. Supports ChirpStack, 
-generic devices, and custom device profiles.`,
+The service forwards raw messages to the configured MQTT broker while
+preserving the original message content. Supports multiple device types
+and custom protocols.`,
 	Run: runServe,
 }
 
@@ -102,21 +101,12 @@ func runServe(cmd *cobra.Command, args []string) {
 	if cfg.Protocols.HTTP.Enabled {
 		httpHandler := http.NewHandler(deviceService, http.Config{
 			Path: cfg.Protocols.HTTP.Path,
-		})
+		}, logger)
 		handlerManager.Register(httpHandler)
 		logger.Infof("Registered HTTP transport handler at path: %s", cfg.Protocols.HTTP.Path)
 		transportCount++
 	}
 
-	// Backward compatibility: ChirpStack as HTTP handler
-	if cfg.Protocols.ChirpStack.Enabled {
-		chirpHandler := chirpstack.NewHandler(mqttClient, chirpstack.Config{
-			Path: cfg.Protocols.ChirpStack.Path,
-		})
-		handlerManager.Register(chirpHandler)
-		logger.Infof("Registered ChirpStack handler at path: %s (backward compatibility)", cfg.Protocols.ChirpStack.Path)
-		transportCount++
-	}
 
 	// 2. WebSocket Transport
 	if cfg.Protocols.WebSocket.Enabled {
@@ -234,33 +224,12 @@ func runServe(cmd *cobra.Command, args []string) {
 		
 		// Add device service health
 		deviceHealth := deviceService.GetHealthStatus()
-		healthData["device_profiles"] = deviceHealth["device_profiles"]
-		healthData["parsers"] = deviceHealth["parsers"]
+		healthData["parsers"] = deviceHealth["parsers"] 
 		healthData["mqtt_connected"] = deviceHealth["mqtt_connected"]
 		
 		return c.JSON(200, healthData)
 	})
 
-	// Device profiles management endpoint
-	e.GET("/device-profiles", func(c echo.Context) error {
-		profiles := deviceService.GetDeviceProfiles()
-		result := make(map[string]interface{})
-		
-		for id, profile := range profiles {
-			result[id] = map[string]interface{}{
-				"make":        profile.Make,
-				"model":       profile.Model,
-				"version":     profile.Version,
-				"description": profile.Description,
-				"detection":   profile.Detection.Method,
-			}
-		}
-		
-		return c.JSON(200, map[string]interface{}{
-			"device_profiles": result,
-			"count":          len(profiles),
-		})
-	})
 
 	// Configure server
 	e.Server.Addr = fmt.Sprintf(":%d", cfg.Server.Port)
@@ -275,7 +244,6 @@ func runServe(cmd *cobra.Command, args []string) {
 		logger.Infof("🔌 Registered %d transport handlers (%d HTTP-based)", transportCount, httpHandlerCount)
 		logger.Infof("📨 MQTT output broker: %s:%d", cfg.MQTT.Broker, cfg.MQTT.Port)
 		logger.Infof("📋 MQTT output topic: %s", cfg.MQTT.Topic)
-		logger.Infof("🔍 Device profiles: %d", len(deviceService.GetDeviceProfiles()))
 		
 		if err := e.Start(e.Server.Addr); err != nil {
 			logger.Errorf("HTTP server error: %v", err)

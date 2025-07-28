@@ -78,18 +78,17 @@ func (h *Handler) HealthCheck(c echo.Context) error {
 	}
 	
 	return c.JSON(200, map[string]interface{}{
-		"transport":        "mqtt-subscriber",
-		"status":           status,
-		"message":          "MQTT subscriber transport handler status",
-		"mqtt_connected":   isConnected,
+		"transport":          "mqtt-subscriber",
+		"status":             status,
+		"message":            "MQTT subscriber transport handler status",
+		"mqtt_connected":     isConnected,
 		"subscriber_running": h.isRunning,
-		"device_profiles":  healthStatus["device_profiles"],
-		"parsers":          healthStatus["parsers"],
-		"broker":           fmt.Sprintf("%s:%d", h.config.Broker, h.config.Port),
-		"subscribe_topics": h.config.SubscribeTopics,
-		"messages_received": h.messageCount,
-		"last_message":     h.lastMessage.Format(time.RFC3339),
-		"timestamp":        time.Now().UTC().Format(time.RFC3339),
+		"parsers":            healthStatus["parsers"],
+		"broker":             fmt.Sprintf("%s:%d", h.config.Broker, h.config.Port),
+		"subscribe_topics":   h.config.SubscribeTopics,
+		"messages_received":  h.messageCount,
+		"last_message":       h.lastMessage.Format(time.RFC3339),
+		"timestamp":          time.Now().UTC().Format(time.RFC3339),
 	})
 }
 

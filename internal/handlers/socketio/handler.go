@@ -377,7 +377,6 @@ func (h *Handler) HealthCheck(c echo.Context) error {
 		"message":           "SocketIO transport handler status",
 		"server_running":    isRunning,
 		"mqtt_connected":    healthStatus["mqtt_connected"],
-		"device_profiles":   healthStatus["device_profiles"],
 		"parsers":           healthStatus["parsers"],
 		"endpoint":          h.config.Path,
 		"namespace":         h.config.Namespace,
