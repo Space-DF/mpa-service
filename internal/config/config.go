@@ -1,9 +1,11 @@
 package config
 
 import (
+	"log"
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -75,6 +77,13 @@ type MQTTConfig struct {
 func New() (Config, error) {
 	var config Config
 
+	// Load .env file first (if it exists)
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("No .env file found or error loading .env: %v", err)
+	} else {
+		log.Printf("Loaded .env file successfully")
+	}
+
 	vp := viper.New()
 	vp.SetConfigFile("configs/config.yaml")
 
@@ -108,9 +117,6 @@ func New() (Config, error) {
 	if err := vp.ReadInConfig(); err != nil {
 		return config, err
 	}
-
-	vp.SetConfigFile(".env")
-	_ = vp.MergeInConfig()
 
 	err := vp.Unmarshal(&config)
 	return config, err
