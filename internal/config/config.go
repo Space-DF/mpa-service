@@ -1,9 +1,11 @@
 package config
 
 import (
+	"log"
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -22,12 +24,36 @@ type ServerConfig struct {
 }
 
 type ProtocolsConfig struct {
-	ChirpStack ChirpStackConfig `mapstructure:"chirpstack"`
+	HTTP       HTTPConfig       `mapstructure:"http"`
+	SMS        SMSConfig        `mapstructure:"sms"`
+	WebSocket  WebSocketConfig  `mapstructure:"websocket"`
+	MQTT       MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
 }
 
-type ChirpStackConfig struct {
+// Protocol-specific configurations
+type HTTPConfig struct {
 	Enabled bool   `mapstructure:"enabled"`
 	Path    string `mapstructure:"path"`
+}
+
+type SMSConfig struct {
+	Enabled    bool   `mapstructure:"enabled"`
+	Provider   string `mapstructure:"provider"`
+	APIKey     string `mapstructure:"api_key"`
+	APISecret  string `mapstructure:"api_secret"`
+	WebhookURL string `mapstructure:"webhook_url"`
+	Port       int    `mapstructure:"port"`
+}
+
+type WebSocketConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Path    string `mapstructure:"path"`
+	Port    int    `mapstructure:"port"`
+}
+
+type MQTTProtocolConfig struct {
+	Enabled bool `mapstructure:"enabled"`
+	Port    int  `mapstructure:"port"`
 }
 
 type MQTTConfig struct {
@@ -41,12 +67,16 @@ type MQTTConfig struct {
 	Retained bool   `mapstructure:"retained"`
 }
 
-type ServerConfig struct {
-	LogLevel string `mapstructure:"log_level"`
-}
 
 func New() (Config, error) {
 	var config Config
+
+	// Load .env file first (if it exists)
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("No .env file found or error loading .env: %v", err)
+	} else {
+		log.Printf("Loaded .env file successfully")
+	}
 
 	vp := viper.New()
 	vp.SetConfigFile("configs/config.yaml")
@@ -65,15 +95,20 @@ func New() (Config, error) {
 	vp.SetDefault("mqtt.topic", "mpa/devices/data")
 	vp.SetDefault("mqtt.qos", 0)
 	vp.SetDefault("mqtt.retained", false)
-	vp.SetDefault("protocols.chirpstack.enabled", true)
-	vp.SetDefault("protocols.chirpstack.path", "/chirpstack")
+	vp.SetDefault("protocols.http.enabled", true)
+	vp.SetDefault("protocols.http.path", "/http")
+	vp.SetDefault("protocols.sms.enabled", false)
+	vp.SetDefault("protocols.sms.provider", "twilio")
+	vp.SetDefault("protocols.sms.port", 8081)
+	vp.SetDefault("protocols.websocket.enabled", false)
+	vp.SetDefault("protocols.websocket.path", "/ws")
+	vp.SetDefault("protocols.websocket.port", 8082)
+	vp.SetDefault("protocols.mqtt_protocol.enabled", false)
+	vp.SetDefault("protocols.mqtt_protocol.port", 1884)
 
 	if err := vp.ReadInConfig(); err != nil {
 		return config, err
 	}
-
-	vp.SetConfigFile(".env")
-	_ = vp.MergeInConfig()
 
 	err := vp.Unmarshal(&config)
 	return config, err

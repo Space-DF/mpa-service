@@ -6,9 +6,9 @@ server:
   write_timeout: 30
   idle_timeout: 60
 
-# MQTT Broker Configuration
+# MQTT Broker Configuration (disabled for HTTP-only mode)
 mqtt:
-  broker: "localhost"
+  broker: ""
   port: 1883
   client_id: "mpa-service"
   username: ""
@@ -19,6 +19,28 @@ mqtt:
 
 # Protocol Configuration
 protocols:
-  chirpstack:
+  http:
     enabled: true
-    path: "/chirpstack"
+    path: "/http"
+  
+  sms:
+    enabled: false
+    provider: "twilio"
+    api_key: ""
+    api_secret: ""
+    webhook_url: ""
+    port: 8081
+  
+  websocket:
+    enabled: false
+    path: "/ws"
+    port: 8082
+  
+  mqtt_protocol:
+    enabled: false
+    port: 1884
+  
+  socketio:
+    enabled: false
+    path: "/socketio"
+    port: 8083
