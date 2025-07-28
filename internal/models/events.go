@@ -173,6 +173,9 @@ type MQTTMessage struct {
 	
 	// Integration event fields
 	IntegrationInfo map[string]interface{} `json:"integration_info,omitempty"`
+	
+	// Transport metadata (for forwarding mode)
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // EventType represents the type of ChirpStack event

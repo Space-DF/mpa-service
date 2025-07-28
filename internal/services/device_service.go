@@ -25,403 +25,121 @@ func NewDeviceService(mqttClient mqtt.ClientInterface) *DeviceService {
 		mqttClient:     mqttClient,
 	}
 	
-	service.initializeDefaults()
+	// No device profile initialization needed - service just forwards messages
+	log.Printf("DeviceService: Initialized as message forwarding service (no device detection)")
 	return service
 }
 
-// initializeDefaults sets up default device profiles and parsers
-func (ds *DeviceService) initializeDefaults() {
-	// Register parsers
-	ds.parserRegistry.RegisterParser("generic", models.NewGenericJSONParser())
-	ds.parserRegistry.RegisterParser("chirpstack", models.NewChirpStackParser())
-	
-	// Create and register default device profiles
-	ds.createDefaultProfiles()
-	
-	// Initialize detectors
-	ds.initializeDetectors()
-}
+// createDefaultProfiles - REMOVED: Device detection not needed for forwarding service
 
-// createDefaultProfiles creates built-in device profiles
-func (ds *DeviceService) createDefaultProfiles() {
-	// RAK2270 Sticker Tracker profile
-	rak2270Profile := &models.DeviceProfile{
-		ID:          "rak-2270-sticker-tracker",
-		Make:        "RAK",
-		Model:       "RAK2270",
-		Version:     "v1.0",
-		Description: "RAK2270 RAK Sticker Tracker",
-		Detection: models.DetectionConfig{
-			Method:   models.DetectionMethodRules,
-			Priority: 100,
-			Rules: []models.DetectionRule{
-				{
-					Type:     "payload",
-					Field:    "event",
-					Operator: "exists",
-					Required: true,
-				},
-				{
-					Type:     "payload", 
-					Field:    "deviceInfo",
-					Operator: "exists",
-					Required: true,
-				},
-			},
-		},
-		Fields: map[string]string{
-			"device_id":   "deviceInfo.devEui",
-			"device_name": "deviceInfo.deviceName",
-			"event_type":  "event",
-		},
-		Metadata: map[string]interface{}{
-			"protocol":     "lorawan",
-			"manufacturer": "RAK Wireless",
-			"device_type":  "gps_tracker",
-			"connectivity": "lorawan",
-		},
-	}
-	ds.deviceRegistry.RegisterProfile(rak2270Profile)
-	
-	// RAK7200 WisNode Track Lite profile
-	rak7200Profile := &models.DeviceProfile{
-		ID:          "rak-7200-track-lite",
-		Make:        "RAK",
-		Model:       "RAK7200",
-		Version:     "v1.0", 
-		Description: "RAK7200 WisNode Track Lite",
-		Detection: models.DetectionConfig{
-			Method:   models.DetectionMethodRules,
-			Priority: 90,
-			Rules: []models.DetectionRule{
-				{
-					Type:     "payload",
-					Field:    "event", 
-					Operator: "exists",
-					Required: true,
-				},
-				{
-					Type:     "payload",
-					Field:    "deviceInfo.deviceName",
-					Operator: "contains",
-					Value:    "RAK7200",
-					Required: false,
-				},
-			},
-		},
-		Fields: map[string]string{
-			"device_id":   "deviceInfo.devEui",
-			"device_name": "deviceInfo.deviceName", 
-			"event_type":  "event",
-		},
-		Metadata: map[string]interface{}{
-			"protocol":     "lorawan",
-			"manufacturer": "RAK Wireless",
-			"device_type":  "environmental_sensor",
-			"connectivity": "lorawan",
-		},
-	}
-	ds.deviceRegistry.RegisterProfile(rak7200Profile)
-	
-	// Generic LoRaWAN Device profile (fallback for unidentified LoRaWAN devices)
-	lorawanGenericProfile := &models.DeviceProfile{
-		ID:          "generic-lorawan",
-		Make:        "Generic",
-		Model:       "LoRaWAN",
-		Version:     "v1.0",
-		Description: "Generic LoRaWAN Device (unidentified make/model)",
-		Detection: models.DetectionConfig{
-			Method:   models.DetectionMethodRules,
-			Priority: 20, // Low priority - fallback for LoRaWAN devices
-			Rules: []models.DetectionRule{
-				{
-					Type:     "payload",
-					Field:    "event",
-					Operator: "exists",
-					Required: true,
-				},
-				{
-					Type:     "payload",
-					Field:    "deviceInfo.devEui",
-					Operator: "exists",
-					Required: true,
-				},
-				{
-					Type:     "payload",
-					Field:    "uplinkEvent",
-					Operator: "exists",
-					Required: false,
-				},
-			},
-		},
-		Fields: map[string]string{
-			"device_id":   "deviceInfo.devEui",
-			"device_name": "deviceInfo.deviceName",
-			"event_type":  "event",
-		},
-		Metadata: map[string]interface{}{
-			"protocol":     "lorawan",
-			"manufacturer": "unknown",
-			"device_type":  "generic_lorawan_device",
-			"connectivity": "lorawan",
-		},
-	}
-	ds.deviceRegistry.RegisterProfile(lorawanGenericProfile)
-	
-	// Generic HTTP profile
-	genericHTTPProfile := &models.DeviceProfile{
-		ID:          "generic-http",
-		Make:        "generic",
-		Model:       "http",
-		Version:     "v1.0",
-		Description: "Generic HTTP device",
-		Detection: models.DetectionConfig{
-			Method:   models.DetectionMethodPath,
-			Pattern:  "/http",
-			Priority: 60,
-		},
-		Fields: map[string]string{
-			"device_id":    "id",
-			"device_name":  "name",
-			"message_type": "type",
-		},
-		Metadata: map[string]interface{}{
-			"protocol": "http",
-			"type":     "generic",
-		},
-	}
-	ds.deviceRegistry.RegisterProfile(genericHTTPProfile)
-	
-	// Generic MQTT profile
-	genericMQTTProfile := &models.DeviceProfile{
-		ID:          "generic-mqtt",
-		Make:        "generic",
-		Model:       "mqtt",
-		Version:     "v1.0",
-		Description: "Generic MQTT device",
-		Detection: models.DetectionConfig{
-			Method:   models.DetectionMethodRules,
-			Priority: 50,
-		},
-		Fields: map[string]string{
-			"device_id":    "device_id",
-			"device_name":  "device_name",
-			"message_type": "message_type",
-		},
-		Metadata: map[string]interface{}{
-			"protocol": "mqtt",
-			"type":     "generic",
-		},
-	}
-	ds.deviceRegistry.RegisterProfile(genericMQTTProfile)
-	
-	// Set generic HTTP as default fallback
-	ds.deviceRegistry.SetDefaultProfile(genericHTTPProfile)
-}
-
-// initializeDetectors sets up and registers all detectors
-func (ds *DeviceService) initializeDetectors() {
-	pathDetector := models.NewPathDetector()
-	headerDetector := models.NewHeaderDetector()
-	payloadDetector := models.NewPayloadDetector()
-	ruleDetector := models.NewRuleBasedDetector()
-	
-	// Register profiles with appropriate detectors
-	for _, profile := range ds.deviceRegistry.GetAllProfiles() {
-		switch profile.Detection.Method {
-		case models.DetectionMethodPath:
-			pathDetector.RegisterProfile(profile)
-		case models.DetectionMethodHeader, models.DetectionMethodHeaders:
-			headerDetector.RegisterProfile(profile)
-		case models.DetectionMethodPayload:
-			payloadDetector.RegisterProfile(profile)
-		case models.DetectionMethodRules:
-			ruleDetector.RegisterProfile(profile)
-		}
-	}
-	
-	// Register detectors with registry (in priority order)
-	ds.deviceRegistry.RegisterDetector(pathDetector)
-	ds.deviceRegistry.RegisterDetector(headerDetector)
-	ds.deviceRegistry.RegisterDetector(ruleDetector)
-	ds.deviceRegistry.RegisterDetector(payloadDetector)
-}
+// initializeDetectors - REMOVED: Device detection not needed for forwarding service
 
 // ProcessHTTPMessage processes an HTTP request and publishes to MQTT
 func (ds *DeviceService) ProcessHTTPMessage(request *http.Request, body []byte, transportMetadata map[string]interface{}) error {
-	// Detect device type
-	deviceProfile, err := ds.detectDevice(request, body, transportMetadata)
-	if err != nil {
-		return fmt.Errorf("device detection failed: %w", err)
-	}
+	log.Printf("DeviceService: Processing HTTP message (body size: %d bytes)", len(body))
 	
-	log.Printf("DeviceService: Detected device profile: %s (%s-%s)", 
-		deviceProfile.ID, deviceProfile.Make, deviceProfile.Model)
-	
-	// Parse and publish
-	return ds.parseAndPublish(body, deviceProfile, request, transportMetadata)
+	// Forward message directly to MQTT without device detection
+	return ds.forwardToMQTT(body, request, transportMetadata)
 }
 
 // ProcessMQTTMessage processes an MQTT message and republishes to main broker
 func (ds *DeviceService) ProcessMQTTMessage(topic string, payload []byte, transportMetadata map[string]interface{}) error {
-	// For MQTT, we need to create a mock HTTP request for detection
-	// or implement MQTT-specific detection
+	log.Printf("DeviceService: Processing MQTT message from topic: %s (payload size: %d bytes)", topic, len(payload))
+	
+	// Add topic information to metadata
+	transportMetadata["mqtt_topic"] = topic
+	
+	// Create mock HTTP request for consistency
 	mockRequest := &http.Request{
 		Header: make(http.Header),
 	}
 	
-	// Add topic information for detection
-	transportMetadata["mqtt_topic"] = topic
-	
-	// Detect device type
-	deviceProfile, err := ds.detectDeviceFromMQTT(topic, payload, transportMetadata)
-	if err != nil {
-		return fmt.Errorf("MQTT device detection failed: %w", err)
-	}
-	
-	log.Printf("DeviceService: Detected MQTT device profile: %s (%s-%s)", 
-		deviceProfile.ID, deviceProfile.Make, deviceProfile.Model)
-	
-	// Parse and publish
-	return ds.parseAndPublish(payload, deviceProfile, mockRequest, transportMetadata)
+	// Forward message directly to MQTT without device detection
+	return ds.forwardToMQTT(payload, mockRequest, transportMetadata)
 }
 
 // ProcessWebSocketMessage processes a WebSocket message and publishes to MQTT
 func (ds *DeviceService) ProcessWebSocketMessage(message []byte, connectionMetadata map[string]interface{}) error {
-	// Create mock HTTP request for WebSocket
+	log.Printf("DeviceService: Processing WebSocket message (message size: %d bytes)", len(message))
+	
+	// Create mock HTTP request for consistency
 	mockRequest := &http.Request{
 		Header: make(http.Header),
 	}
 	
 	connectionMetadata["transport"] = "websocket"
 	
-	// Detect device type
-	deviceProfile, err := ds.detectDeviceFromWebSocket(message, connectionMetadata)
-	if err != nil {
-		return fmt.Errorf("WebSocket device detection failed: %w", err)
+	// Forward message directly to MQTT without device detection
+	return ds.forwardToMQTT(message, mockRequest, connectionMetadata)
+}
+
+// detectDevice - REMOVED: Device detection not needed for forwarding service
+
+// detectDeviceFromMQTT - REMOVED: Device detection not needed for forwarding service
+
+// detectDeviceFromWebSocket - REMOVED: Device detection not needed for forwarding service
+
+// parseAndPublish - REMOVED: Parsing not needed for forwarding service
+
+// forwardToMQTT forwards raw message directly to MQTT without device detection or parsing
+func (ds *DeviceService) forwardToMQTT(payload []byte, request *http.Request, metadata map[string]interface{}) error {
+	// Create a simple MQTT message with raw payload
+	mqttMessage := &models.MQTTMessage{
+		DeviceID:    "unknown",
+		DeviceName:  "unknown", 
+		EventType:   "raw",
+		Data:        payload,
+		DecodedData: nil,
+		Timestamp:   time.Now(),
+		Metadata:    metadata,
 	}
 	
-	log.Printf("DeviceService: Detected WebSocket device profile: %s (%s-%s)", 
-		deviceProfile.ID, deviceProfile.Make, deviceProfile.Model)
-	
-	// Parse and publish
-	return ds.parseAndPublish(message, deviceProfile, mockRequest, connectionMetadata)
-}
-
-// detectDevice uses HTTP request for device detection
-func (ds *DeviceService) detectDevice(request *http.Request, body []byte, metadata map[string]interface{}) (*models.DeviceProfile, error) {
-	return ds.deviceRegistry.DetectDevice(request, body)
-}
-
-// detectDeviceFromMQTT implements MQTT-specific device detection
-func (ds *DeviceService) detectDeviceFromMQTT(topic string, payload []byte, metadata map[string]interface{}) (*models.DeviceProfile, error) {
-	// Try payload-based detection first
-	payloadDetector := models.NewPayloadDetector()
-	for _, profile := range ds.deviceRegistry.GetAllProfiles() {
-		if profile.Detection.Method == models.DetectionMethodPayload {
-			payloadDetector.RegisterProfile(profile)
+	// Add request information to metadata if available
+	if request != nil {
+		if mqttMessage.Metadata == nil {
+			mqttMessage.Metadata = make(map[string]interface{})
+		}
+		mqttMessage.Metadata["request_path"] = request.URL.Path
+		mqttMessage.Metadata["request_method"] = request.Method
+		if userAgent := request.Header.Get("User-Agent"); userAgent != "" {
+			mqttMessage.Metadata["user_agent"] = userAgent
 		}
 	}
 	
-	mockRequest := &http.Request{Header: make(http.Header)}
-	if profile, err := payloadDetector.DetectDevice(mockRequest, payload); err == nil {
-		return profile, nil
-	}
-	
-	// Fall back to generic MQTT profile
-	if profile, exists := ds.deviceRegistry.GetProfile("generic-mqtt"); exists {
-		return profile, nil
-	}
-	
-	return nil, fmt.Errorf("no device profile found for MQTT topic: %s", topic)
-}
-
-// detectDeviceFromWebSocket implements WebSocket-specific device detection
-func (ds *DeviceService) detectDeviceFromWebSocket(message []byte, metadata map[string]interface{}) (*models.DeviceProfile, error) {
-	// For now, use payload-based detection
-	// This can be enhanced with connection-specific metadata
-	payloadDetector := models.NewPayloadDetector()
-	for _, profile := range ds.deviceRegistry.GetAllProfiles() {
-		if profile.Detection.Method == models.DetectionMethodPayload {
-			payloadDetector.RegisterProfile(profile)
+	// Check if MQTT client is available and connected before publishing
+	if ds.mqttClient != nil && ds.mqttClient.IsConnected() {
+		if err := ds.mqttClient.Publish(mqttMessage); err != nil {
+			return fmt.Errorf("failed to publish to MQTT: %w", err)
 		}
+		log.Printf("DeviceService: Forwarded raw message to MQTT (size: %d bytes)", len(payload))
+	} else {
+		log.Printf("DeviceService: MQTT client not available, skipping forward (size: %d bytes)", len(payload))
 	}
-	
-	mockRequest := &http.Request{Header: make(http.Header)}
-	if profile, err := payloadDetector.DetectDevice(mockRequest, message); err == nil {
-		return profile, nil
-	}
-	
-	// Fall back to generic profile
-	if profile, exists := ds.deviceRegistry.GetProfile("generic-http"); exists {
-		return profile, nil
-	}
-	
-	return nil, fmt.Errorf("no device profile found for WebSocket message")
-}
-
-// parseAndPublish handles parsing and MQTT publishing
-func (ds *DeviceService) parseAndPublish(payload []byte, profile *models.DeviceProfile, request *http.Request, metadata map[string]interface{}) error {
-	// Get appropriate parser
-	parser, err := ds.parserRegistry.GetParserForDevice(profile)
-	if err != nil {
-		return fmt.Errorf("parser not found for device %s: %w", profile.ID, err)
-	}
-	
-	// Parse the message
-	deviceMessage, err := parser.Parse(payload, profile, request)
-	if err != nil {
-		return fmt.Errorf("message parsing failed with %s parser: %w", parser.GetParserName(), err)
-	}
-	
-	// Add transport metadata
-	if deviceMessage.Metadata == nil {
-		deviceMessage.Metadata = make(map[string]interface{})
-	}
-	for k, v := range metadata {
-		deviceMessage.Metadata[k] = v
-	}
-	
-	// Convert to MQTT message and publish
-	mqttMessage := deviceMessage.ToMQTTMessage()
-	mqttMessage.Timestamp = time.Now()
-	
-	if err := ds.mqttClient.Publish(mqttMessage); err != nil {
-		return fmt.Errorf("failed to publish to MQTT: %w", err)
-	}
-	
-	log.Printf("DeviceService: Successfully processed message from device %s (%s) via %s parser", 
-		deviceMessage.DeviceID, deviceMessage.Profile.ID, parser.GetParserName())
 	
 	return nil
 }
 
-// AddDeviceProfile allows runtime addition of device profiles
+// AddDeviceProfile - REMOVED: Device profiles not needed for forwarding service
 func (ds *DeviceService) AddDeviceProfile(profile *models.DeviceProfile) error {
-	if err := ds.deviceRegistry.RegisterProfile(profile); err != nil {
-		return err
-	}
-	
-	// Re-initialize detectors to include new profile
-	ds.initializeDetectors()
-	return nil
+	return fmt.Errorf("device profiles not supported in forwarding mode")
 }
 
-// AddParser allows runtime addition of custom parsers
+// AddParser - REMOVED: Parsers not needed for forwarding service
 func (ds *DeviceService) AddParser(name string, parser models.DevicePayloadParser) {
-	ds.parserRegistry.RegisterParser(name, parser)
+	log.Printf("DeviceService: Parsers not supported in forwarding mode")
 }
 
-// GetDeviceProfiles returns all registered device profiles
+// GetDeviceProfiles - REMOVED: Device profiles not needed for forwarding service
 func (ds *DeviceService) GetDeviceProfiles() map[string]*models.DeviceProfile {
-	return ds.deviceRegistry.GetAllProfiles()
+	return make(map[string]*models.DeviceProfile) // Empty map for forwarding mode
 }
 
 // GetHealthStatus returns service health information
 func (ds *DeviceService) GetHealthStatus() map[string]interface{} {
 	return map[string]interface{}{
-		"device_profiles": len(ds.deviceRegistry.GetAllProfiles()),
-		"parsers":        len(ds.parserRegistry.GetAllParsers()),
+		"mode":           "forwarding",
+		"device_profiles": 0,
+		"parsers":        0,
 		"mqtt_connected": ds.mqttClient != nil && ds.mqttClient.IsConnected(),
 	}
 }
