@@ -16,11 +16,11 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port         int    `mapstructure:"port"`
-	LogLevel     string `mapstructure:"log_level"`
-	ReadTimeout  int    `mapstructure:"read_timeout"`
-	WriteTimeout int    `mapstructure:"write_timeout"`
-	IdleTimeout  int    `mapstructure:"idle_timeout"`
+	Port         int    `mapstructure:"port" env:"SERVER_PORT"`
+	LogLevel     string `mapstructure:"log_level" env:"SERVER_LOG_LEVEL"`
+	ReadTimeout  int    `mapstructure:"read_timeout" env:"SERVER_READ_TIMEOUT"`
+	WriteTimeout int    `mapstructure:"write_timeout" env:"SERVER_WRITE_TIMEOUT"`
+	IdleTimeout  int    `mapstructure:"idle_timeout" env:"SERVER_IDLE_TIMEOUT"`
 }
 
 type ProtocolsConfig struct {
@@ -32,58 +32,70 @@ type ProtocolsConfig struct {
 
 // Protocol-specific configurations
 type HTTPConfig struct {
-	Enabled bool   `mapstructure:"enabled"`
-	Path    string `mapstructure:"path"`
+	Enabled bool   `mapstructure:"enabled" env:"PROTOCOLS_HTTP_ENABLED"`
+	Path    string `mapstructure:"path" env:"PROTOCOLS_HTTP_PATH"`
 }
 
 type SMSConfig struct {
-	Enabled    bool   `mapstructure:"enabled"`
-	Provider   string `mapstructure:"provider"`
-	APIKey     string `mapstructure:"api_key"`
-	APISecret  string `mapstructure:"api_secret"`
-	WebhookURL string `mapstructure:"webhook_url"`
-	Port       int    `mapstructure:"port"`
+	Enabled    bool   `mapstructure:"enabled" env:"PROTOCOLS_SMS_ENABLED"`
+	Provider   string `mapstructure:"provider" env:"PROTOCOLS_SMS_PROVIDER"`
+	APIKey     string `mapstructure:"api_key" env:"PROTOCOLS_SMS_API_KEY"`
+	APISecret  string `mapstructure:"api_secret" env:"PROTOCOLS_SMS_API_SECRET"`
+	WebhookURL string `mapstructure:"webhook_url" env:"PROTOCOLS_SMS_WEBHOOK_URL"`
+	Port       int    `mapstructure:"port" env:"PROTOCOLS_SMS_PORT"`
 }
 
 type WebSocketConfig struct {
-	Enabled bool   `mapstructure:"enabled"`
-	Path    string `mapstructure:"path"`
-	Port    int    `mapstructure:"port"`
+	Enabled bool   `mapstructure:"enabled" env:"PROTOCOLS_WEBSOCKET_ENABLED"`
+	Path    string `mapstructure:"path" env:"PROTOCOLS_WEBSOCKET_PATH"`
+	Port    int    `mapstructure:"port" env:"PROTOCOLS_WEBSOCKET_PORT"`
 }
 
 type MQTTProtocolConfig struct {
-	Enabled bool `mapstructure:"enabled"`
-	Port    int  `mapstructure:"port"`
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_MQTT_PROTOCOL_ENABLED"`
+	Port    int  `mapstructure:"port" env:"PROTOCOLS_MQTT_PROTOCOL_PORT"`
 }
 
 type MQTTConfig struct {
-	Broker   string `mapstructure:"broker"`
-	Port     int    `mapstructure:"port"`
-	ClientID string `mapstructure:"client_id"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	Topic    string `mapstructure:"topic"`
-	QOS      byte   `mapstructure:"qos"`
-	Retained bool   `mapstructure:"retained"`
+	Broker   string `mapstructure:"broker" env:"MQTT_BROKER"`
+	Port     int    `mapstructure:"port" env:"MQTT_PORT"`
+	ClientID string `mapstructure:"client_id" env:"MQTT_CLIENT_ID"`
+	Username string `mapstructure:"username" env:"MQTT_USERNAME"`
+	Password string `mapstructure:"password" env:"MQTT_PASSWORD"`
+	Topic    string `mapstructure:"topic" env:"MQTT_TOPIC"`
+	QOS      byte   `mapstructure:"qos" env:"MQTT_QOS"`
+	Retained bool   `mapstructure:"retained" env:"MQTT_RETAINED"`
 }
 
 
 func New() (Config, error) {
 	var config Config
 
-	// Load .env file first (if it exists)
-	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("No .env file found or error loading .env: %v", err)
-	} else {
-		log.Printf("Loaded .env file successfully")
+	vp := viper.New()
+	
+	// Set defaults first (lowest priority)
+	setDefaults(vp)
+
+	// Load config file (medium priority) 
+	vp.SetConfigFile("configs/config.yaml")
+	if err := vp.ReadInConfig(); err != nil {
+		log.Printf("Config file not found, using defaults and environment variables")
 	}
 
-	vp := viper.New()
-	vp.SetConfigFile("configs/config.yaml")
+	// Load .env file (higher priority)
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("No .env file found")
+	}
 
+	// Enable OS environment variables (highest priority)
 	vp.AutomaticEnv()
 	vp.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	vp.SetEnvPrefix("")
 
+	return config, vp.Unmarshal(&config)
+}
+
+func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("server.port", 8080)
 	vp.SetDefault("server.log_level", "info")
 	vp.SetDefault("server.read_timeout", 30)
@@ -105,13 +117,6 @@ func New() (Config, error) {
 	vp.SetDefault("protocols.websocket.port", 8082)
 	vp.SetDefault("protocols.mqtt_protocol.enabled", false)
 	vp.SetDefault("protocols.mqtt_protocol.port", 1884)
-
-	if err := vp.ReadInConfig(); err != nil {
-		return config, err
-	}
-
-	err := vp.Unmarshal(&config)
-	return config, err
 }
 
 func (c Config) ReadTimeout() time.Duration {
