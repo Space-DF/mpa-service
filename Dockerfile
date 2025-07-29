@@ -34,8 +34,6 @@ COPY --from=builder /app/configs /app/configs
 # Create non-root user (ID 1000)
 USER 1000
 
-# Expose the default port
-EXPOSE 8080
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
