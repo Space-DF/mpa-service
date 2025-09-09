@@ -15,6 +15,9 @@ import (
 	"github.com/Space-DF/mpa-service/internal/handlers/mqttprotocol"
 	"github.com/Space-DF/mpa-service/internal/handlers/socketio"
 	"github.com/Space-DF/mpa-service/internal/handlers/websocket"
+	"github.com/Space-DF/mpa-service/internal/handlers/chirpstack"
+	"github.com/Space-DF/mpa-service/internal/handlers/ttn"
+	"github.com/Space-DF/mpa-service/internal/handlers/helium"
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/services"
@@ -97,7 +100,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	// Register transport handlers based on configuration
 	transportCount := 0
 
-	// 1. HTTP Transport (replaces ChirpStack-specific handler)
+	// 1. HTTP Transport (generic HTTP handler)
 	if cfg.Protocols.HTTP.Enabled {
 		httpHandler := http.NewHandler(deviceService, http.Config{
 			Path: cfg.Protocols.HTTP.Path,
@@ -107,8 +110,32 @@ func runServe(cmd *cobra.Command, args []string) {
 		transportCount++
 	}
 
+	// 2. ChirpStack HTTP Transport
+	if cfg.Protocols.ChirpStack.Enabled {
+		chirpstackHandler := chirpstack.NewHandler(deviceService, chirpstack.Config{}, logger)
+		handlerManager.Register(chirpstackHandler)
+		logger.Infof("Registered ChirpStack transport handler at path: /lorawan/chirpstack/http")
+		transportCount++
+	}
 
-	// 2. WebSocket Transport
+	// 3. TTN HTTP Transport
+	if cfg.Protocols.TTN.Enabled {
+		ttnHandler := ttn.NewHandler(deviceService, ttn.Config{}, logger)
+		handlerManager.Register(ttnHandler)
+		logger.Infof("Registered TTN transport handler at path: /lorawan/ttn/http")
+		transportCount++
+	}
+
+	// 4. Helium HTTP Transport
+	if cfg.Protocols.Helium.Enabled {
+		heliumHandler := helium.NewHandler(deviceService, helium.Config{}, logger)
+		handlerManager.Register(heliumHandler)
+		logger.Infof("Registered Helium transport handler at path: /lorawan/helium/http")
+		transportCount++
+	}
+
+
+	// 5. WebSocket Transport
 	if cfg.Protocols.WebSocket.Enabled {
 		wsHandler := websocket.NewHandler(deviceService, websocket.Config{
 			Path:               cfg.Protocols.WebSocket.Path,
@@ -127,7 +154,7 @@ func runServe(cmd *cobra.Command, args []string) {
 		transportCount++
 	}
 
-	// 3. MQTT Subscriber Transport (non-HTTP)
+	// 6. MQTT Subscriber Transport (non-HTTP)
 	if cfg.Protocols.MQTT.Enabled {
 		mqttConfig := mqttprotocol.Config{
 			Broker:          cfg.MQTT.Broker,
@@ -156,7 +183,7 @@ func runServe(cmd *cobra.Command, args []string) {
 		handlerManager.Register(mqttTransportHandler)
 	}
 
-	// 4. SocketIO Transport (non-HTTP initially, but needs HTTP for upgrade)
+	// 7. SocketIO Transport (non-HTTP initially, but needs HTTP for upgrade)
 	if cfg.Protocols.WebSocket.Enabled { // Reuse WebSocket config for SocketIO
 		sioHandler := socketio.NewHandler(deviceService, socketio.Config{
 			Path:           "/socket.io/",

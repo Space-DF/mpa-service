@@ -28,6 +28,9 @@ type ProtocolsConfig struct {
 	SMS        SMSConfig        `mapstructure:"sms"`
 	WebSocket  WebSocketConfig  `mapstructure:"websocket"`
 	MQTT       MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
+	ChirpStack ChirpStackConfig `mapstructure:"chirpstack"`
+	TTN        TTNConfig        `mapstructure:"ttn"`
+	Helium     HeliumConfig     `mapstructure:"helium"`
 }
 
 // Protocol-specific configurations
@@ -54,6 +57,18 @@ type WebSocketConfig struct {
 type MQTTProtocolConfig struct {
 	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_MQTT_PROTOCOL_ENABLED"`
 	Port    int  `mapstructure:"port" env:"PROTOCOLS_MQTT_PROTOCOL_PORT"`
+}
+
+type ChirpStackConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_CHIRPSTACK_ENABLED"`
+}
+
+type TTNConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_TTN_ENABLED"`
+}
+
+type HeliumConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_HELIUM_ENABLED"`
 }
 
 type MQTTConfig struct {
@@ -117,6 +132,9 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("protocols.websocket.port", 8082)
 	vp.SetDefault("protocols.mqtt_protocol.enabled", false)
 	vp.SetDefault("protocols.mqtt_protocol.port", 1884)
+	vp.SetDefault("protocols.chirpstack.enabled", true)
+	vp.SetDefault("protocols.ttn.enabled", true)
+	vp.SetDefault("protocols.helium.enabled", true)
 }
 
 func (c Config) ReadTimeout() time.Duration {

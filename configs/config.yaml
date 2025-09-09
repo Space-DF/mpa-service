@@ -44,3 +44,12 @@ protocols:
     enabled: false
     path: "/socketio"
     port: 8083
+  
+  chirpstack:
+    enabled: true
+  
+  ttn:
+    enabled: true
+    
+  helium:
+    enabled: true
