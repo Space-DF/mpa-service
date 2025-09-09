@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Space-DF/mpa-service/internal/handlers"
+	"github.com/Space-DF/mpa-service/internal/protocols/common"
 	"github.com/Space-DF/mpa-service/internal/services"
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/labstack/echo/v4"

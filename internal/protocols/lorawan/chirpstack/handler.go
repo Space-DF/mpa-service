@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/Space-DF/mpa-service/internal/handlers"
+	"github.com/Space-DF/mpa-service/internal/protocols/common"
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/services"
 )

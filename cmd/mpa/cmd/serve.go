@@ -10,14 +10,12 @@ import (
 	"time"
 
 	"github.com/Space-DF/mpa-service/internal/config"
-	"github.com/Space-DF/mpa-service/internal/handlers"
-	"github.com/Space-DF/mpa-service/internal/handlers/http"
-	"github.com/Space-DF/mpa-service/internal/handlers/mqttprotocol"
-	"github.com/Space-DF/mpa-service/internal/handlers/socketio"
-	"github.com/Space-DF/mpa-service/internal/handlers/websocket"
-	"github.com/Space-DF/mpa-service/internal/handlers/chirpstack"
-	"github.com/Space-DF/mpa-service/internal/handlers/ttn"
-	"github.com/Space-DF/mpa-service/internal/handlers/helium"
+	"github.com/Space-DF/mpa-service/internal/protocols/common"
+	"github.com/Space-DF/mpa-service/internal/protocols/transport/http"
+	mqttprotocol "github.com/Space-DF/mpa-service/internal/protocols/transport/mqtt"
+	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
+	"github.com/Space-DF/mpa-service/internal/protocols/transport/websocket"
+	"github.com/Space-DF/mpa-service/internal/protocols/lorawan"
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/services"
@@ -112,7 +110,8 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// 2. ChirpStack HTTP Transport
 	if cfg.Protocols.ChirpStack.Enabled {
-		chirpstackHandler := chirpstack.NewHandler(deviceService, chirpstack.Config{}, logger)
+		chirpstackFactory := lorawan.NewChirpStackFactory(deviceService, logger)
+		chirpstackHandler := chirpstackFactory.CreateHandler()
 		handlerManager.Register(chirpstackHandler)
 		logger.Infof("Registered ChirpStack transport handler at path: /lorawan/chirpstack/http")
 		transportCount++
@@ -120,7 +119,8 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// 3. TTN HTTP Transport
 	if cfg.Protocols.TTN.Enabled {
-		ttnHandler := ttn.NewHandler(deviceService, ttn.Config{}, logger)
+		ttnFactory := lorawan.NewTTNFactory(deviceService, logger)
+		ttnHandler := ttnFactory.CreateHandler()
 		handlerManager.Register(ttnHandler)
 		logger.Infof("Registered TTN transport handler at path: /lorawan/ttn/http")
 		transportCount++
@@ -128,7 +128,8 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// 4. Helium HTTP Transport
 	if cfg.Protocols.Helium.Enabled {
-		heliumHandler := helium.NewHandler(deviceService, helium.Config{}, logger)
+		heliumFactory := lorawan.NewHeliumFactory(deviceService, logger)
+		heliumHandler := heliumFactory.CreateHandler()
 		handlerManager.Register(heliumHandler)
 		logger.Infof("Registered Helium transport handler at path: /lorawan/helium/http")
 		transportCount++
