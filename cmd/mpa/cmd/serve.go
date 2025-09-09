@@ -9,18 +9,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/spf13/cobra"
 	"github.com/Space-DF/mpa-service/internal/config"
 	"github.com/Space-DF/mpa-service/internal/handlers"
 	"github.com/Space-DF/mpa-service/internal/handlers/http"
 	"github.com/Space-DF/mpa-service/internal/handlers/mqttprotocol"
-	"github.com/Space-DF/mpa-service/internal/handlers/websocket"
 	"github.com/Space-DF/mpa-service/internal/handlers/socketio"
+	"github.com/Space-DF/mpa-service/internal/handlers/websocket"
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/services"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -153,7 +153,7 @@ func runServe(cmd *cobra.Command, args []string) {
 		}
 		
 		// Add health check endpoint for MQTT
-		handlerManager.Register(mqttTransportHandler.(handlers.ProtocolHandler))
+		handlerManager.Register(mqttTransportHandler)
 	}
 
 	// 4. SocketIO Transport (non-HTTP initially, but needs HTTP for upgrade)
@@ -183,7 +183,7 @@ func runServe(cmd *cobra.Command, args []string) {
 		}
 		
 		// Register SocketIO with handler manager for HTTP routes
-		handlerManager.Register(sioHandler.(handlers.ProtocolHandler))
+		handlerManager.Register(sioHandler)
 	}
 
 	// Create Echo instance

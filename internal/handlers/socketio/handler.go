@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	socketio "github.com/googollee/go-socket.io"
-	"github.com/labstack/echo/v4"
 	"github.com/Space-DF/mpa-service/internal/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
+	socketio "github.com/googollee/go-socket.io"
+	"github.com/labstack/echo/v4"
 )
 
 // Handler implements SocketIO transport handler for multi-device support
@@ -126,7 +126,7 @@ func (h *Handler) Stop() error {
 			log.Printf("SocketIO: Closing connection: %s", conn.ID)
 		}
 		
-		h.server.Close()
+		_ = h.server.Close()
 		h.server = nil
 	}
 	
