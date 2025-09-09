@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/labstack/echo/v4"
 	"github.com/Space-DF/mpa-service/internal/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
+	"github.com/gorilla/websocket"
+	"github.com/labstack/echo/v4"
 )
 
 // Handler implements WebSocket transport handler for multi-device support
@@ -130,15 +130,15 @@ func (h *Handler) handleConnection(conn *Connection) {
 		delete(h.connections, conn.ID)
 		h.mutex.Unlock()
 		
-		conn.Conn.Close()
+		_ = conn.Conn.Close()
 		log.Printf("WebSocket: Connection closed: %s", conn.ID)
 	}()
 	
 	// Set connection limits
 	conn.Conn.SetReadLimit(h.config.MaxMessageSize)
-	conn.Conn.SetReadDeadline(time.Now().Add(time.Duration(h.config.PongWait) * time.Second))
+	_ = conn.Conn.SetReadDeadline(time.Now().Add(time.Duration(h.config.PongWait) * time.Second))
 	conn.Conn.SetPongHandler(func(string) error {
-		conn.Conn.SetReadDeadline(time.Now().Add(time.Duration(h.config.PongWait) * time.Second))
+		_ = conn.Conn.SetReadDeadline(time.Now().Add(time.Duration(h.config.PongWait) * time.Second))
 		return nil
 	})
 	
@@ -148,14 +148,11 @@ func (h *Handler) handleConnection(conn *Connection) {
 	
 	// Handle ping in a separate goroutine
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				conn.Conn.SetWriteDeadline(time.Now().Add(time.Duration(h.config.WriteWait) * time.Second))
-				if err := conn.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-					log.Printf("WebSocket: Error sending ping to %s: %v", conn.ID, err)
-					return
-				}
+		for range ticker.C {
+			_ = conn.Conn.SetWriteDeadline(time.Now().Add(time.Duration(h.config.WriteWait) * time.Second))
+			if err := conn.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Printf("WebSocket: Error sending ping to %s: %v", conn.ID, err)
+				return
 			}
 		}
 	}()
@@ -238,7 +235,7 @@ func (h *Handler) processMessage(conn *Connection, message []byte) {
 
 // sendResponse sends a response back to the WebSocket client
 func (h *Handler) sendResponse(conn *Connection, response interface{}) {
-	conn.Conn.SetWriteDeadline(time.Now().Add(time.Duration(h.config.WriteWait) * time.Second))
+	_ = conn.Conn.SetWriteDeadline(time.Now().Add(time.Duration(h.config.WriteWait) * time.Second))
 	if err := conn.Conn.WriteJSON(response); err != nil {
 		log.Printf("WebSocket: Error sending response to %s: %v", conn.ID, err)
 	}
@@ -322,7 +319,7 @@ func (h *Handler) CloseConnection(connectionID string) error {
 	defer h.mutex.Unlock()
 	
 	if conn, exists := h.connections[connectionID]; exists {
-		conn.Conn.Close()
+		_ = conn.Conn.Close()
 		delete(h.connections, connectionID)
 		log.Printf("WebSocket: Manually closed connection: %s", connectionID)
 		return nil
