@@ -46,10 +46,10 @@ protocols:
     port: 8083
   
   chirpstack:
-    enabled: true
+    enabled: false
   
   ttn:
-    enabled: true
+    enabled: false
     
   helium:
-    enabled: true
+    enabled: false

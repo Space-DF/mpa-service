@@ -2,7 +2,7 @@ package lorawan
 
 import (
 	"github.com/Space-DF/mpa-service/internal/logger"
-	"github.com/Space-DF/mpa-service/internal/protocols/common"
+	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan/chirpstack"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan/helium"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan/ttn"

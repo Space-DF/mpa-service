@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Space-DF/mpa-service/internal/config"
-	"github.com/Space-DF/mpa-service/internal/protocols/common"
+	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/http"
 	mqttprotocol "github.com/Space-DF/mpa-service/internal/protocols/transport/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
