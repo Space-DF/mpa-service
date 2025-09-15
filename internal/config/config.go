@@ -132,9 +132,9 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("protocols.websocket.port", 8082)
 	vp.SetDefault("protocols.mqtt_protocol.enabled", false)
 	vp.SetDefault("protocols.mqtt_protocol.port", 1884)
-	vp.SetDefault("protocols.chirpstack.enabled", true)
-	vp.SetDefault("protocols.ttn.enabled", true)
-	vp.SetDefault("protocols.helium.enabled", true)
+	vp.SetDefault("protocols.chirpstack.enabled", false)
+	vp.SetDefault("protocols.ttn.enabled", false)
+	vp.SetDefault("protocols.helium.enabled", false)
 }
 
 func (c Config) ReadTimeout() time.Duration {
