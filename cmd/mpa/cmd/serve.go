@@ -218,10 +218,21 @@ func runServe(cmd *cobra.Command, args []string) {
 	e := echo.New()
 	e.HideBanner = true
 
-	// Middleware
+	// Security and operational middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
+	
+	// Request timeout middleware (prevent slow loris attacks)
+	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+		Timeout: 30 * time.Second,
+	}))
+	
+	// Body limit middleware (global fallback, handlers have their own limits)
+	e.Use(middleware.BodyLimit("2M"))
+	
+	// Rate limiting middleware (basic protection)
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(100)))
 
 	// Setup routes for all registered HTTP-based handlers
 	httpHandlerCount := 0

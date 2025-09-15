@@ -3,6 +3,8 @@ package base
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -21,7 +23,9 @@ type LoRaWANHandler struct {
 
 // Config holds LoRaWAN handler configuration
 type Config struct {
-	Provider string // Provider name (chirpstack, ttn, helium, etc.)
+	Provider        string `yaml:"provider"`        // Provider name (chirpstack, ttn, helium, etc.)
+	MaxRequestSize  int64  `yaml:"max_request_size"` // Maximum request body size in bytes (default: 1MB)
+	RequestTimeout  int    `yaml:"request_timeout"`  // Request timeout in seconds (default: 30)
 }
 
 // NewLoRaWANHandler creates a new generic LoRaWAN handler
@@ -53,10 +57,30 @@ func (h LoRaWANHandler) Method() string {
 func (h *LoRaWANHandler) Handle(c echo.Context) error {
 	startTime := time.Now()
 	
-	// Read request body
+	// Validate Content-Type
+	contentType := c.Request().Header.Get("Content-Type")
+	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
+		h.logger.Warnf("%s: Invalid content type: %s", h.provider, contentType)
+		return echo.NewHTTPError(400, "Content-Type must be application/json")
+	}
+	
+	// Set maximum request body size (default 1MB)
+	maxSize := h.config.MaxRequestSize
+	if maxSize == 0 {
+		maxSize = 1024 * 1024 // 1MB default
+	}
+	
+	// Limit request body size to prevent memory exhaustion attacks
+	c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxSize)
+	
+	// Read request body with size limit
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		h.logger.Errorf("%s: Error reading request body: %v", h.provider, err)
+		// Check if it's a size limit error
+		if strings.Contains(err.Error(), "http: request body too large") {
+			return echo.NewHTTPError(413, "Request body too large")
+		}
 		return echo.NewHTTPError(400, "Failed to read request body")
 	}
 	

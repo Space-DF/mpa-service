@@ -3,6 +3,8 @@ package http
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -20,7 +22,9 @@ type Handler struct {
 
 // Config holds HTTP transport handler configuration
 type Config struct {
-	Path string `yaml:"path"`
+	Path           string `yaml:"path"`
+	MaxRequestSize int64  `yaml:"max_request_size"` // Maximum request body size in bytes (default: 1MB)
+	RequestTimeout int    `yaml:"request_timeout"`  // Request timeout in seconds (default: 30)
 }
 
 // NewHandler creates a new HTTP transport handler
@@ -51,10 +55,30 @@ func (h Handler) Method() string {
 func (h *Handler) Handle(c echo.Context) error {
 	startTime := time.Now()
 	
-	// Read request body
+	// Validate Content-Type for JSON payloads
+	contentType := c.Request().Header.Get("Content-Type")
+	if contentType != "" && !strings.HasPrefix(contentType, "application/json") && !strings.HasPrefix(contentType, "text/plain") {
+		h.logger.Warnf("HTTP Transport: Invalid content type: %s", contentType)
+		return echo.NewHTTPError(400, "Content-Type must be application/json or text/plain")
+	}
+	
+	// Set maximum request body size (default 1MB)
+	maxSize := h.config.MaxRequestSize
+	if maxSize == 0 {
+		maxSize = 1024 * 1024 // 1MB default
+	}
+	
+	// Limit request body size to prevent memory exhaustion attacks
+	c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxSize)
+	
+	// Read request body with size limit
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		h.logger.Errorf("HTTP Transport: Error reading request body: %v", err)
+		// Check if it's a size limit error
+		if strings.Contains(err.Error(), "http: request body too large") {
+			return echo.NewHTTPError(413, "Request body too large")
+		}
 		return echo.NewHTTPError(400, "Failed to read request body")
 	}
 	
