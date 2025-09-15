@@ -350,6 +350,19 @@ make clean          # Clean build artifacts
 make test
 ```
 
+### Local Linting & Security Checks
+- Tooling (once):
+  ```bash
+  go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.4.0
+  go install github.com/securego/gosec/v2/cmd/gosec@master
+  ```
+- MPA service:
+  ```bash
+  cd mpa-service (optional)
+  golangci-lint run
+  gosec ./...
+  ```
+
 ### Manual Testing
 
 1. Start the service:
