@@ -1,6 +1,8 @@
 package lorawan
 
 import (
+	"fmt"
+	
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan/base"
@@ -43,6 +45,11 @@ func (f LoRaWANHandlerFactory) Name() string {
 
 // CreateHandler creates a LoRaWAN protocol handler
 func (f *LoRaWANHandlerFactory) CreateHandler() handlers.ProtocolHandler {
+	// Check if dependencies are properly initialized
+	if f.deviceService == nil || f.logger == nil {
+		panic(fmt.Sprintf("LoRaWANHandlerFactory for %s not properly initialized - missing dependencies. Use SetupFactory() or direct constructors like NewChirpStackFactory()", f.providerName))
+	}
+	
 	baseConfig := base.Config{
 		Provider: f.providerName,
 	}
@@ -56,17 +63,17 @@ func init() {
 
 // RegisterLoRaWANFactories registers all LoRaWAN provider factories
 func RegisterLoRaWANFactories() {
-	// Register ChirpStack
+	// Register ChirpStack - factory needs dependencies set via SetupFactory before use
 	handlers.Register("chirpstack", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "chirpstack"}
 	})
 
-	// Register TTN
+	// Register TTN - factory needs dependencies set via SetupFactory before use  
 	handlers.Register("ttn", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "ttn"}
 	})
 
-	// Register Helium
+	// Register Helium - factory needs dependencies set via SetupFactory before use
 	handlers.Register("helium", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "helium"}
 	})
