@@ -77,17 +77,17 @@ type BaseParser struct {
 }
 
 // GetParserName returns the parser name
-func (bp *BaseParser) GetParserName() string {
+func (bp BaseParser) GetParserName() string {
 	return bp.Name
 }
 
 // GetSupportedDeviceTypes returns supported device types
-func (bp *BaseParser) GetSupportedDeviceTypes() []string {
+func (bp BaseParser) GetSupportedDeviceTypes() []string {
 	return bp.SupportedDevices
 }
 
 // Validate performs basic validation
-func (bp *BaseParser) Validate(rawData []byte, profile *DeviceProfile) error {
+func (bp BaseParser) Validate(rawData []byte, profile *DeviceProfile) error {
 	if len(rawData) == 0 {
 		return fmt.Errorf("empty payload")
 	}
@@ -154,7 +154,7 @@ func (gjp *GenericJSONParser) Parse(rawData []byte, profile *DeviceProfile, requ
 }
 
 // extractField extracts a field value from JSON payload using dot notation
-func (gjp *GenericJSONParser) extractField(payload map[string]interface{}, fieldPath string) string {
+func (gjp GenericJSONParser) extractField(payload map[string]interface{}, fieldPath string) string {
 	if fieldPath == "" {
 		return ""
 	}

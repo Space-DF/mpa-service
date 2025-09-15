@@ -7,11 +7,11 @@ type LoRaWANDevice struct {
 }
 
 // GetDeviceID returns the DevEUI as primary identifier
-func (d *LoRaWANDevice) GetDeviceID() string {
+func (d LoRaWANDevice) GetDeviceID() string {
 	return d.DevEUI
 }
 
 // GetDeviceName returns the device name
-func (d *LoRaWANDevice) GetDeviceName() string {
+func (d LoRaWANDevice) GetDeviceName() string {
 	return d.DeviceName
 }

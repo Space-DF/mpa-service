@@ -45,17 +45,17 @@ func NewHandler(deviceService *services.DeviceService, config Config) handlers.P
 }
 
 // Name returns the transport protocol name
-func (h *Handler) Name() string {
+func (h Handler) Name() string {
 	return "mqtt-subscriber"
 }
 
 // Path returns empty string as MQTT doesn't use HTTP paths
-func (h *Handler) Path() string {
+func (h Handler) Path() string {
 	return "" // MQTT doesn't use HTTP paths
 }
 
 // Method returns empty string as MQTT doesn't use HTTP methods
-func (h *Handler) Method() string {
+func (h Handler) Method() string {
 	return "" // MQTT doesn't use HTTP methods
 }
 

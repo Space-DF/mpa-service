@@ -33,17 +33,17 @@ func NewHandler(deviceService *services.DeviceService, config Config, logger *lo
 }
 
 // Name returns the transport protocol name
-func (h *Handler) Name() string {
+func (h Handler) Name() string {
 	return "http"
 }
 
 // Path returns the HTTP endpoint path
-func (h *Handler) Path() string {
+func (h Handler) Path() string {
 	return h.config.Path
 }
 
 // Method returns the HTTP method this handler expects
-func (h *Handler) Method() string {
+func (h Handler) Method() string {
 	return "POST"
 }
 

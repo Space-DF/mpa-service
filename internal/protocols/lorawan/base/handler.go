@@ -35,17 +35,17 @@ func NewLoRaWANHandler(deviceService *services.DeviceService, config Config, log
 }
 
 // Name returns the handler name
-func (h *LoRaWANHandler) Name() string {
+func (h LoRaWANHandler) Name() string {
 	return h.provider
 }
 
 // Path returns the HTTP endpoint path
-func (h *LoRaWANHandler) Path() string {
+func (h LoRaWANHandler) Path() string {
 	return fmt.Sprintf("/lorawan/%s/http", h.provider)
 }
 
 // Method returns the HTTP method
-func (h *LoRaWANHandler) Method() string {
+func (h LoRaWANHandler) Method() string {
 	return "POST"
 }
 
