@@ -129,7 +129,7 @@ type DeviceMessage struct {
 }
 
 // ToMQTTMessage converts device message to unified MQTT format
-func (dm *DeviceMessage) ToMQTTMessage() *MQTTMessage {
+func (dm DeviceMessage) ToMQTTMessage() *MQTTMessage {
 	return &MQTTMessage{
 		DeviceID:    dm.DeviceID,
 		DeviceName:  dm.DeviceName,

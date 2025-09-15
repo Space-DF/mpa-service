@@ -76,17 +76,17 @@ func NewHandler(deviceService *services.DeviceService, config Config) handlers.P
 }
 
 // Name returns the transport protocol name
-func (h *Handler) Name() string {
+func (h Handler) Name() string {
 	return "websocket"
 }
 
 // Path returns the WebSocket endpoint path
-func (h *Handler) Path() string {
+func (h Handler) Path() string {
 	return h.config.Path
 }
 
 // Method returns the HTTP method for WebSocket upgrade
-func (h *Handler) Method() string {
+func (h Handler) Method() string {
 	return "GET" // WebSocket upgrade uses GET
 }
 
