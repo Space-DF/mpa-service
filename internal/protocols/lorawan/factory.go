@@ -64,19 +64,25 @@ func init() {
 // RegisterLoRaWANFactories registers all LoRaWAN provider factories
 func RegisterLoRaWANFactories() {
 	// Register ChirpStack - factory needs dependencies set via SetupFactory before use
-	handlers.Register("chirpstack", func() handlers.ProtocolHandlerFactory {
+	if err := handlers.Register("chirpstack", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "chirpstack"}
-	})
+	}); err != nil {
+		panic(fmt.Sprintf("failed to register chirpstack factory: %v", err))
+	}
 
 	// Register TTN - factory needs dependencies set via SetupFactory before use  
-	handlers.Register("ttn", func() handlers.ProtocolHandlerFactory {
+	if err := handlers.Register("ttn", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "ttn"}
-	})
+	}); err != nil {
+		panic(fmt.Sprintf("failed to register ttn factory: %v", err))
+	}
 
 	// Register Helium - factory needs dependencies set via SetupFactory before use
-	handlers.Register("helium", func() handlers.ProtocolHandlerFactory {
+	if err := handlers.Register("helium", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "helium"}
-	})
+	}); err != nil {
+		panic(fmt.Sprintf("failed to register helium factory: %v", err))
+	}
 }
 
 // SetupFactory configures a factory with dependencies

@@ -63,17 +63,17 @@ func NewHandler(deviceService *services.DeviceService, config Config) handlers.P
 }
 
 // Name returns the transport protocol name
-func (h Handler) Name() string {
+func (h *Handler) Name() string {
 	return "socketio"
 }
 
 // Path returns the SocketIO endpoint path
-func (h Handler) Path() string {
+func (h *Handler) Path() string {
 	return h.config.Path
 }
 
 // Method returns the HTTP method for SocketIO
-func (h Handler) Method() string {
+func (h *Handler) Method() string {
 	return "GET" // SocketIO starts with GET for upgrade
 }
 
