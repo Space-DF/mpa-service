@@ -61,11 +61,14 @@ func TestHandlerRegistry_Register(t *testing.T) {
 func TestHandlerRegistry_RegisterDuplicate(t *testing.T) {
 	registry := NewHandlerRegistry()
 
-	registry.Register("test", func() ProtocolHandlerFactory {
+	err := registry.Register("test", func() ProtocolHandlerFactory {
 		return &mockFactory{name: "test"}
 	})
+	if err != nil {
+		t.Fatalf("Expected no error on first registration, got %v", err)
+	}
 
-	err := registry.Register("test", func() ProtocolHandlerFactory {
+	err = registry.Register("test", func() ProtocolHandlerFactory {
 		return &mockFactory{name: "test2"}
 	})
 
@@ -77,9 +80,12 @@ func TestHandlerRegistry_RegisterDuplicate(t *testing.T) {
 func TestHandlerRegistry_CreateFactory(t *testing.T) {
 	registry := NewHandlerRegistry()
 
-	registry.Register("test", func() ProtocolHandlerFactory {
+	err := registry.Register("test", func() ProtocolHandlerFactory {
 		return &mockFactory{name: "test"}
 	})
+	if err != nil {
+		t.Fatalf("Expected no error on registration, got %v", err)
+	}
 
 	factory, err := registry.CreateFactory("test")
 	if err != nil {
@@ -103,12 +109,18 @@ func TestHandlerRegistry_CreateFactoryNotFound(t *testing.T) {
 func TestHandlerRegistry_GetRegisteredProtocols(t *testing.T) {
 	registry := NewHandlerRegistry()
 
-	registry.Register("protocol1", func() ProtocolHandlerFactory {
+	err := registry.Register("protocol1", func() ProtocolHandlerFactory {
 		return &mockFactory{name: "protocol1"}
 	})
-	registry.Register("protocol2", func() ProtocolHandlerFactory {
+	if err != nil {
+		t.Fatalf("Expected no error on first registration, got %v", err)
+	}
+	err = registry.Register("protocol2", func() ProtocolHandlerFactory {
 		return &mockFactory{name: "protocol2"}
 	})
+	if err != nil {
+		t.Fatalf("Expected no error on second registration, got %v", err)
+	}
 
 	protocols := registry.GetRegisteredProtocols()
 	if len(protocols) != 2 {
@@ -119,11 +131,14 @@ func TestHandlerRegistry_GetRegisteredProtocols(t *testing.T) {
 func TestHandlerRegistry_Unregister(t *testing.T) {
 	registry := NewHandlerRegistry()
 
-	registry.Register("test", func() ProtocolHandlerFactory {
+	err := registry.Register("test", func() ProtocolHandlerFactory {
 		return &mockFactory{name: "test"}
 	})
+	if err != nil {
+		t.Fatalf("Expected no error on registration, got %v", err)
+	}
 
-	err := registry.Unregister("test")
+	err = registry.Unregister("test")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -179,10 +194,10 @@ func TestConcurrentAccess(t *testing.T) {
 	done := make(chan bool)
 	go func() {
 		for i := 0; i < 100; i++ {
-			registry.Register("concurrent1", func() ProtocolHandlerFactory {
+			_ = registry.Register("concurrent1", func() ProtocolHandlerFactory {
 				return &mockFactory{name: "concurrent1"}
 			})
-			registry.Unregister("concurrent1")
+			_ = registry.Unregister("concurrent1")
 		}
 		done <- true
 	}()
