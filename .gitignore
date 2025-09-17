@@ -12,6 +12,7 @@
 *.so
 *.dylib
 bin/
+mpa
 
 # Test binary, built with `go test -c`
 *.test

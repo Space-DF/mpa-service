@@ -8,7 +8,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/labstack/echo/v4"
-	"github.com/Space-DF/mpa-service/internal/handlers"
+	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
 )
 

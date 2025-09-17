@@ -50,7 +50,7 @@ func (pd *PathDetector) DetectDevice(request *http.Request, body []byte) (*Devic
 }
 
 // matchesPattern performs simple wildcard pattern matching
-func (pd *PathDetector) matchesPattern(path, pattern string) bool {
+func (pd PathDetector) matchesPattern(path, pattern string) bool {
 	// Convert wildcard pattern to regex
 	escaped := regexp.QuoteMeta(pattern)
 	regex := strings.ReplaceAll(escaped, "\\*", ".*")
@@ -61,12 +61,12 @@ func (pd *PathDetector) matchesPattern(path, pattern string) bool {
 }
 
 // GetSupportedMethods returns supported detection methods
-func (pd *PathDetector) GetSupportedMethods() []DetectionMethod {
+func (pd PathDetector) GetSupportedMethods() []DetectionMethod {
 	return []DetectionMethod{DetectionMethodPath}
 }
 
 // GetPriority returns detector priority
-func (pd *PathDetector) GetPriority() int {
+func (pd PathDetector) GetPriority() int {
 	return 100 // High priority for path detection
 }
 
@@ -106,7 +106,7 @@ func (hd *HeaderDetector) DetectDevice(request *http.Request, body []byte) (*Dev
 }
 
 // matchesProfile checks if request headers match a device profile
-func (hd *HeaderDetector) matchesProfile(request *http.Request, profile *DeviceProfile) bool {
+func (hd HeaderDetector) matchesProfile(request *http.Request, profile *DeviceProfile) bool {
 	detection := profile.Detection
 	
 	switch detection.Method {
@@ -130,12 +130,12 @@ func (hd *HeaderDetector) matchesProfile(request *http.Request, profile *DeviceP
 }
 
 // GetSupportedMethods returns supported detection methods
-func (hd *HeaderDetector) GetSupportedMethods() []DetectionMethod {
+func (hd HeaderDetector) GetSupportedMethods() []DetectionMethod {
 	return []DetectionMethod{DetectionMethodHeader, DetectionMethodHeaders}
 }
 
 // GetPriority returns detector priority
-func (hd *HeaderDetector) GetPriority() int {
+func (hd HeaderDetector) GetPriority() int {
 	return 90 // Medium-high priority for header detection
 }
 
@@ -179,7 +179,7 @@ func (pd *PayloadDetector) DetectDevice(request *http.Request, body []byte) (*De
 }
 
 // matchesPayload checks if payload structure matches a device profile
-func (pd *PayloadDetector) matchesPayload(body []byte, profile *DeviceProfile) bool {
+func (pd PayloadDetector) matchesPayload(body []byte, profile *DeviceProfile) bool {
 	// Try to parse as JSON
 	var payload map[string]interface{}
 	if err := json.Unmarshal(body, &payload); err != nil {
@@ -204,12 +204,12 @@ func (pd *PayloadDetector) matchesPayload(body []byte, profile *DeviceProfile) b
 }
 
 // GetSupportedMethods returns supported detection methods
-func (pd *PayloadDetector) GetSupportedMethods() []DetectionMethod {
+func (pd PayloadDetector) GetSupportedMethods() []DetectionMethod {
 	return []DetectionMethod{DetectionMethodPayload}
 }
 
 // GetPriority returns detector priority
-func (pd *PayloadDetector) GetPriority() int {
+func (pd PayloadDetector) GetPriority() int {
 	return 50 // Lower priority for payload detection (more expensive)
 }
 
@@ -249,7 +249,7 @@ func (rbd *RuleBasedDetector) DetectDevice(request *http.Request, body []byte) (
 }
 
 // matchesRules checks if request matches all rules in a device profile
-func (rbd *RuleBasedDetector) matchesRules(request *http.Request, body []byte, profile *DeviceProfile) bool {
+func (rbd RuleBasedDetector) matchesRules(request *http.Request, body []byte, profile *DeviceProfile) bool {
 	for _, rule := range profile.Detection.Rules {
 		if !rbd.matchesRule(request, body, rule) {
 			if rule.Required {
@@ -261,7 +261,7 @@ func (rbd *RuleBasedDetector) matchesRules(request *http.Request, body []byte, p
 }
 
 // matchesRule checks if a single rule matches
-func (rbd *RuleBasedDetector) matchesRule(request *http.Request, body []byte, rule DetectionRule) bool {
+func (rbd RuleBasedDetector) matchesRule(request *http.Request, body []byte, rule DetectionRule) bool {
 	switch rule.Type {
 	case "header":
 		return rbd.matchesHeaderRule(request, rule)
@@ -275,7 +275,7 @@ func (rbd *RuleBasedDetector) matchesRule(request *http.Request, body []byte, ru
 }
 
 // matchesHeaderRule checks if header rule matches
-func (rbd *RuleBasedDetector) matchesHeaderRule(request *http.Request, rule DetectionRule) bool {
+func (rbd RuleBasedDetector) matchesHeaderRule(request *http.Request, rule DetectionRule) bool {
 	headerValue := request.Header.Get(rule.Field)
 	
 	switch rule.Operator {
@@ -294,7 +294,7 @@ func (rbd *RuleBasedDetector) matchesHeaderRule(request *http.Request, rule Dete
 }
 
 // matchesPathRule checks if path rule matches
-func (rbd *RuleBasedDetector) matchesPathRule(request *http.Request, rule DetectionRule) bool {
+func (rbd RuleBasedDetector) matchesPathRule(request *http.Request, rule DetectionRule) bool {
 	path := request.URL.Path
 	
 	switch rule.Operator {
@@ -311,7 +311,7 @@ func (rbd *RuleBasedDetector) matchesPathRule(request *http.Request, rule Detect
 }
 
 // matchesPayloadRule checks if payload rule matches
-func (rbd *RuleBasedDetector) matchesPayloadRule(body []byte, rule DetectionRule) bool {
+func (rbd RuleBasedDetector) matchesPayloadRule(body []byte, rule DetectionRule) bool {
 	var payload map[string]interface{}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return false
@@ -339,11 +339,11 @@ func (rbd *RuleBasedDetector) matchesPayloadRule(body []byte, rule DetectionRule
 }
 
 // GetSupportedMethods returns supported detection methods
-func (rbd *RuleBasedDetector) GetSupportedMethods() []DetectionMethod {
+func (rbd RuleBasedDetector) GetSupportedMethods() []DetectionMethod {
 	return []DetectionMethod{DetectionMethodRules}
 }
 
 // GetPriority returns detector priority
-func (rbd *RuleBasedDetector) GetPriority() int {
+func (rbd RuleBasedDetector) GetPriority() int {
 	return 80 // Medium priority for rule-based detection
 }

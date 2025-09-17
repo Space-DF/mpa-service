@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Space-DF/mpa-service/internal/handlers"
+	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"

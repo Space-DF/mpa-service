@@ -24,10 +24,15 @@ type ServerConfig struct {
 }
 
 type ProtocolsConfig struct {
-	HTTP       HTTPConfig       `mapstructure:"http"`
-	SMS        SMSConfig        `mapstructure:"sms"`
-	WebSocket  WebSocketConfig  `mapstructure:"websocket"`
+	HTTP       HTTPConfig         `mapstructure:"http"`
+	SMS        SMSConfig          `mapstructure:"sms"`
+	WebSocket  WebSocketConfig    `mapstructure:"websocket"`
 	MQTT       MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
+	LoRaWAN    LoRaWANConfig      `mapstructure:"lorawan"`
+	// Backward compatibility - these will be deprecated
+	ChirpStack ChirpStackConfig   `mapstructure:"chirpstack"`
+	TTN        TTNConfig          `mapstructure:"ttn"`
+	Helium     HeliumConfig       `mapstructure:"helium"`
 }
 
 // Protocol-specific configurations
@@ -54,6 +59,29 @@ type WebSocketConfig struct {
 type MQTTProtocolConfig struct {
 	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_MQTT_PROTOCOL_ENABLED"`
 	Port    int  `mapstructure:"port" env:"PROTOCOLS_MQTT_PROTOCOL_PORT"`
+}
+
+type ChirpStackConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_CHIRPSTACK_ENABLED"`
+}
+
+type TTNConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_TTN_ENABLED"`
+}
+
+type HeliumConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_HELIUM_ENABLED"`
+}
+
+// LoRaWANConfig defines configuration for LoRaWAN providers
+type LoRaWANConfig struct {
+	Providers map[string]LoRaWANProviderConfig `mapstructure:"providers"`
+}
+
+// LoRaWANProviderConfig defines configuration for a single LoRaWAN provider
+type LoRaWANProviderConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Name    string `mapstructure:"name"` // Display name (optional)
 }
 
 type MQTTConfig struct {
@@ -117,6 +145,9 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("protocols.websocket.port", 8082)
 	vp.SetDefault("protocols.mqtt_protocol.enabled", false)
 	vp.SetDefault("protocols.mqtt_protocol.port", 1884)
+	vp.SetDefault("protocols.chirpstack.enabled", false)
+	vp.SetDefault("protocols.ttn.enabled", false)
+	vp.SetDefault("protocols.helium.enabled", false)
 }
 
 func (c Config) ReadTimeout() time.Duration {
