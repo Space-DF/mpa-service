@@ -1,16 +1,15 @@
 package http
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/logger"
+	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
+	"github.com/labstack/echo/v4"
 )
 
 // Handler implements HTTP transport handler for multi-device support
@@ -55,6 +54,9 @@ func (h Handler) Method() string {
 func (h *Handler) Handle(c echo.Context) error {
 	startTime := time.Now()
 	
+	// HTTP Handler - Strict Tenant Validation
+	h.logger.Infof("HTTP Handler: Processing request with strict tenant validation")
+	
 	// Validate Content-Type for JSON payloads
 	contentType := c.Request().Header.Get("Content-Type")
 	if contentType != "" && !strings.HasPrefix(contentType, "application/json") && !strings.HasPrefix(contentType, "text/plain") {
@@ -86,7 +88,7 @@ func (h *Handler) Handle(c echo.Context) error {
 	h.logger.Infof("HTTP Transport: Received %s request to %s from %s (body size: %d bytes)", 
 		c.Request().Method, c.Request().URL.Path, c.Request().RemoteAddr, len(body))
 	
-	// Debug log: Print original message content before any processing
+	// Log original message content for debugging
 	h.logger.Debugf("HTTP Transport: Original message payload:\n%s", string(body))
 	
 	// Prepare transport metadata
@@ -114,19 +116,31 @@ func (h *Handler) Handle(c echo.Context) error {
 		}
 	}
 	
-	// Process message through device service
+	// Extract organization slug from subdomain
+	tenantID := h.extractTenantFromSubdomain(c.Request().Host)
+	if tenantID == "" {
+		h.logger.Errorf("HTTP Transport: Organization slug not found in subdomain")
+		return echo.NewHTTPError(400, "Invalid subdomain: must include organization slug (e.g., {org-slug}.localhost)")
+	}
+
+	// Sanitize tenant ID for security
+	tenantID = h.sanitizeTenantID(tenantID)
+	if tenantID == "" {
+		h.logger.Errorf("HTTP Transport: Invalid organization slug name")
+
+		return echo.NewHTTPError(400, "Invalid organization slug name")
+	}
+
+	transportMetadata["tenant_id"] = tenantID
+	h.logger.Infof("HTTP Transport: Tenant extraction successful from subdomain, tenant_id = %s", tenantID)
+	
+	// CALL DEVICE SERVICE WITH TENANT INFORMATION
 	if err := h.deviceService.ProcessHTTPMessage(c.Request(), body, transportMetadata); err != nil {
 		h.logger.Errorf("HTTP Transport: Error processing message: %v", err)
-		
-		// Return appropriate error response based on error type
-		if fmt.Sprintf("%v", err)[:19] == "device detection failed" {
-			return echo.NewHTTPError(400, fmt.Sprintf("Device detection failed: %v", err))
-		} else if fmt.Sprintf("%v", err)[:21] == "message parsing failed" {
-			return echo.NewHTTPError(400, fmt.Sprintf("Message parsing failed: %v", err))
-		} else {
-			return echo.NewHTTPError(500, "Internal processing error")
-		}
+		return echo.NewHTTPError(500, "Internal processing error")
 	}
+	
+	h.logger.Infof("HTTP Transport: ✅ Message processed successfully with tenant-based routing")
 	
 	processingTime := time.Since(startTime)
 	h.logger.Infof("HTTP Transport: Successfully processed message in %v", processingTime)
@@ -161,3 +175,92 @@ func (h *Handler) HealthCheck(c echo.Context) error {
 	})
 }
 
+// sanitizeTenantID sanitizes organization slug name for security
+func (h *Handler) sanitizeTenantID(tenantID string) string {
+	if tenantID == "" {
+		return ""
+	}
+
+	// Remove MQTT wildcards and dangerous characters
+	tenantID = strings.ReplaceAll(tenantID, "+", "")
+	tenantID = strings.ReplaceAll(tenantID, "#", "")
+	tenantID = strings.ReplaceAll(tenantID, "../", "")
+	tenantID = strings.ReplaceAll(tenantID, "..", "")
+	tenantID = strings.ReplaceAll(tenantID, "/", "")
+	tenantID = strings.ReplaceAll(tenantID, "\\", "")
+	tenantID = strings.ReplaceAll(tenantID, " ", "")
+	tenantID = strings.ReplaceAll(tenantID, "\t", "")
+	tenantID = strings.ReplaceAll(tenantID, "\n", "")
+	tenantID = strings.ReplaceAll(tenantID, "\r", "")
+	tenantID = strings.TrimSpace(tenantID)
+	
+	// Validate format (alphanumeric, hyphens, underscores only)
+	if len(tenantID) > 0 && len(tenantID) <= 64 {
+		valid := true
+		for _, char := range tenantID {
+			if (char < 'a' || char > 'z') && (char < 'A' || char > 'Z') &&
+				(char < '0' || char > '9') && char != '-' && char != '_' {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			return tenantID
+		}
+	}
+	
+	return ""
+}
+
+// extractTenantFromSubdomain extracts organization slug from subdomain
+func (h *Handler) extractTenantFromSubdomain(host string) string {
+    if host == "" {
+        return ""
+    }
+    
+    // Remove port if present (e.g., "spacedf.localhost:3000" -> "spacedf.localhost")
+    if colonIndex := strings.Index(host, ":"); colonIndex != -1 {
+        host = host[:colonIndex]
+    }
+    
+    // Split by dots to get subdomain parts
+    parts := strings.Split(host, ".")
+    if len(parts) < 2 {
+        return ""
+    }
+    
+    // The first part should be the organization slug
+    // e.g., "spacedf.localhost" -> ["spacedf", "localhost"] -> "spacedf"
+    return parts[0]
+}
+
+// I will use this function later if needed 
+// extractTenantInfo extracts tenant information from HTTP headers 
+// func (h *Handler) extractTenantInfo(c echo.Context, metadata map[string]interface{}) {
+// 	// Check common tenant header patterns
+// 	tenantHeaders := []string{
+// 		"X-Tenant-ID",
+// 		"X-Organization",
+// 		"X-Tenant",
+// 		"X-Space-ID",
+// 		"Tenant-ID",
+// 		"Organization",
+// 	}
+// 	for _, headerName := range tenantHeaders {
+// 		if value := c.Request().Header.Get(headerName); value != "" {
+// 			metadata["tenant_id"] = value
+// 			h.logger.Infof("HTTP Transport: Extracted tenant from header %s: %s", headerName, value)
+// 			break
+// 		}
+// 	}
+	
+// 	// Check for tenant in path (e.g., /tenant/acme-corp/device/data)
+// 	path := c.Request().URL.Path
+// 	if strings.HasPrefix(path, "/tenant/") {
+// 		parts := strings.Split(path, "/")
+// 		if len(parts) >= 3 {
+// 			metadata["tenant_id"] = parts[2]
+// 			h.logger.Infof("HTTP Transport: Extracted tenant from path: %s", parts[2])
+// 		}
+// 	}
+// }

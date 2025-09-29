@@ -8,15 +8,14 @@ server:
 
 # MQTT Broker Configuration (disabled for HTTP-only mode)
 mqtt:
-  broker: ""
+  broker: "emqx"
   port: 1883
   client_id: "mpa-service"
   username: ""
   password: ""
-  topic: "mpa/devices/data"
+  topic: "tenant/{tenant_id}/device/data"
   qos: 0
   retained: false
-
 # Protocol Configuration
 protocols:
   http:

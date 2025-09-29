@@ -36,9 +36,10 @@ func NewDeviceService(mqttClient mqtt.ClientInterface) *DeviceService {
 
 // ProcessHTTPMessage processes an HTTP request and publishes to MQTT
 func (ds *DeviceService) ProcessHTTPMessage(request *http.Request, body []byte, transportMetadata map[string]interface{}) error {
-	log.Printf("DeviceService: Processing HTTP message (body size: %d bytes)", len(body))
+	log.Printf("DeviceService: 🚀 Processing HTTP message (body size: %d bytes)", len(body))
 	
-	// Forward message directly to MQTT without device detection
+	
+	// Forward message directly to MQTT with tenant information
 	return ds.forwardToMQTT(body, request, transportMetadata)
 }
 
@@ -81,12 +82,12 @@ func (ds *DeviceService) ProcessWebSocketMessage(message []byte, connectionMetad
 
 // parseAndPublish - REMOVED: Parsing not needed for forwarding service
 
-// forwardToMQTT forwards raw message directly to MQTT without device detection or parsing
+// forwardToMQTT forwards raw message directly to MQTT with flexible topic generation
 func (ds *DeviceService) forwardToMQTT(payload []byte, request *http.Request, metadata map[string]interface{}) error {
 	// Create a simple MQTT message with raw payload
 	mqttMessage := &models.MQTTMessage{
 		DeviceID:    "unknown",
-		DeviceName:  "unknown", 
+		DeviceName:  "unknown",
 		EventType:   "raw",
 		Data:        payload,
 		DecodedData: nil,
@@ -106,14 +107,23 @@ func (ds *DeviceService) forwardToMQTT(payload []byte, request *http.Request, me
 		}
 	}
 	
+	topic := ds.generateFlexibleTopic(metadata)
+	if topic == "" {
+		return fmt.Errorf("tenant information is required for topic generation")
+	}
+	
 	// Check if MQTT client is available and connected before publishing
 	if ds.mqttClient != nil && ds.mqttClient.IsConnected() {
+		// Override the topic in the MQTT message
+		mqttMessage.Metadata["mqtt_topic"] = topic
+		
 		if err := ds.mqttClient.Publish(mqttMessage); err != nil {
 			return fmt.Errorf("failed to publish to MQTT: %w", err)
 		}
-		log.Printf("DeviceService: Forwarded raw message to MQTT (size: %d bytes)", len(payload))
+
+		// log.Printf("Published to topic: %s (size: %d bytes)", topic, len(payload))
 	} else {
-		log.Printf("DeviceService: MQTT client not available, skipping forward (size: %d bytes)", len(payload))
+		return fmt.Errorf("MQTT client not available or not connected")
 	}
 	
 	return nil
@@ -141,4 +151,38 @@ func (ds *DeviceService) GetHealthStatus() map[string]interface{} {
 		"parsers":        0,
 		"mqtt_connected": ds.mqttClient != nil && ds.mqttClient.IsConnected(),
 	}
+}
+
+// extractTenantID extracts tenant ID from metadata
+func (ds *DeviceService) extractTenantID(metadata map[string]interface{}) string {
+	if tenantID, ok := metadata["tenant_id"].(string); ok && tenantID != "" {
+		return tenantID
+	}
+	
+	// Check for other tenant fields
+	tenantFields := []string{"tenant", "organization", "space_id", "organization_id"}
+	for _, field := range tenantFields {
+		if value, ok := metadata[field].(string); ok && value != "" {
+			return value
+		}
+	}
+	
+	return ""
+}
+
+
+// generateFlexibleTopic creates a topic based on available tenant information
+func (ds *DeviceService) generateFlexibleTopic(metadata map[string]interface{}) string {
+	// Extract tenant information 
+	tenantID := ds.extractTenantID(metadata)
+
+	if tenantID == "" {
+		log.Printf("No tenant found in metadata")
+		return ""
+	}
+
+	// Use simplified tenant-based topic: {tenant}/device/data
+	topic := fmt.Sprintf("tenant/%s/device/data", tenantID)
+	log.Printf("DeviceService: 🎯 Using simplified tenant-based topic: %s", topic)
+	return topic
 }

@@ -85,14 +85,16 @@ type LoRaWANProviderConfig struct {
 }
 
 type MQTTConfig struct {
-	Broker   string `mapstructure:"broker" env:"MQTT_BROKER"`
-	Port     int    `mapstructure:"port" env:"MQTT_PORT"`
-	ClientID string `mapstructure:"client_id" env:"MQTT_CLIENT_ID"`
-	Username string `mapstructure:"username" env:"MQTT_USERNAME"`
-	Password string `mapstructure:"password" env:"MQTT_PASSWORD"`
-	Topic    string `mapstructure:"topic" env:"MQTT_TOPIC"`
-	QOS      byte   `mapstructure:"qos" env:"MQTT_QOS"`
-	Retained bool   `mapstructure:"retained" env:"MQTT_RETAINED"`
+	Broker          string   `mapstructure:"broker" env:"MQTT_BROKER"`
+	Port            int      `mapstructure:"port" env:"MQTT_PORT"`
+	ClientID        string   `mapstructure:"client_id" env:"MQTT_CLIENT_ID"`
+	Username        string   `mapstructure:"username" env:"MQTT_USERNAME"`
+	Password        string   `mapstructure:"password" env:"MQTT_PASSWORD"`
+	Topic           string   `mapstructure:"topic" env:"MQTT_TOPIC"`
+	TopicTemplate   string   `mapstructure:"topic_template" env:"MQTT_TOPIC_TEMPLATE"`
+	SubscribeTopics []string `mapstructure:"subscribe_topics" env:"MQTT_SUBSCRIBE_TOPICS"`
+	QOS             byte     `mapstructure:"qos" env:"MQTT_QOS"`
+	Retained        bool     `mapstructure:"retained" env:"MQTT_RETAINED"`
 }
 
 
@@ -132,7 +134,12 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("mqtt.broker", "localhost")
 	vp.SetDefault("mqtt.port", 1883)
 	vp.SetDefault("mqtt.client_id", "mpa-service")
-	vp.SetDefault("mqtt.topic", "mpa/devices/data")
+	vp.SetDefault("mqtt.topic_template", "tenant/{tenant_id}/device/data")
+	vp.SetDefault("mqtt.subscribe_topics", []string{
+		"*/device/data",
+		"*/device/status", 
+		"*/device/telemetry",
+	})
 	vp.SetDefault("mqtt.qos", 0)
 	vp.SetDefault("mqtt.retained", false)
 	vp.SetDefault("protocols.http.enabled", true)
