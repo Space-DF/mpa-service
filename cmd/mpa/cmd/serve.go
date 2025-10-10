@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/Space-DF/mpa-service/internal/config"
+	"github.com/Space-DF/mpa-service/internal/logger"
+	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
+	"github.com/Space-DF/mpa-service/internal/protocols/lorawan"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/http"
 	mqttprotocol "github.com/Space-DF/mpa-service/internal/protocols/transport/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/websocket"
-	"github.com/Space-DF/mpa-service/internal/protocols/lorawan"
-	"github.com/Space-DF/mpa-service/internal/logger"
-	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/services"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -73,13 +73,24 @@ func runServe(cmd *cobra.Command, args []string) {
 	if cfg.MQTT.Broker != "" {
 		fmt.Println("Attempting MQTT connection...")
 		mqttClientImpl := mqtt.NewClient(cfg.MQTT)
-		if err := mqttClientImpl.Connect(); err != nil {
-			fmt.Printf("MQTT connection failed: %v (continuing without MQTT)\n", err)
-			mqttClient = nil
-		} else {
-			fmt.Println("MQTT connected successfully")
-			mqttClient = mqttClientImpl
-			defer mqttClientImpl.Disconnect()
+		
+		// FORCE MQTT CONNECTION - REQUIRED FOR TOPIC-BASED ROUTING
+		maxRetries := 10
+		for i := 0; i < maxRetries; i++ {
+			if err := mqttClientImpl.Connect(); err != nil {
+				if i == maxRetries-1 {
+					fmt.Printf("MQTT connection failed after %d attempts: %v\n", maxRetries, err)
+					fmt.Printf("MQTT is required for topic-based routing - service cannot start\n")
+					log.Fatalf("MQTT connection is required for tenant-based routing")
+				}
+				fmt.Printf("MQTT connection attempt %d failed: %v, retrying in %d seconds...\n", i+1, err, (i+1)*2)
+				time.Sleep(time.Duration((i+1)*2) * time.Second)
+			} else {
+				fmt.Println("MQTT connected successfully - tenant-based routing enabled")
+				mqttClient = mqttClientImpl
+				defer mqttClientImpl.Disconnect()
+				break
+			}
 		}
 	} else {
 		fmt.Println("No MQTT broker configured, skipping")
