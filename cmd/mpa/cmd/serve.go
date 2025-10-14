@@ -120,12 +120,18 @@ func runServe(cmd *cobra.Command, args []string) {
 	}
 
 	// 2. ChirpStack HTTP Transport
+	fmt.Printf("DEBUG: ChirpStack configuration enabled: %v\n", cfg.Protocols.ChirpStack.Enabled)
 	if cfg.Protocols.ChirpStack.Enabled {
+		fmt.Println("DEBUG: Creating ChirpStack factory and handler...")
 		chirpstackFactory := lorawan.NewChirpStackFactory(deviceService, logger)
 		chirpstackHandler := chirpstackFactory.CreateHandler()
+		fmt.Printf("DEBUG: ChirpStack handler created, path: %s, method: %s\n", chirpstackHandler.Path(), chirpstackHandler.Method())
 		handlerManager.Register(chirpstackHandler)
 		logger.Infof("Registered ChirpStack transport handler at path: /lorawan/chirpstack/http")
+		fmt.Printf("DEBUG: ChirpStack handler registered successfully, transport count: %d\n", transportCount+1)
 		transportCount++
+	} else {
+		fmt.Println("DEBUG: ChirpStack is disabled, skipping handler registration")
 	}
 
 	// 3. TTN HTTP Transport
@@ -247,16 +253,24 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	// Setup routes for all registered HTTP-based handlers
 	httpHandlerCount := 0
+	fmt.Printf("DEBUG: Setting up routes for %d registered handlers\n", len(handlerManager.GetHandlers()))
 	for name, handler := range handlerManager.GetHandlers() {
+		fmt.Printf("DEBUG: Processing handler '%s', path: '%s', method: '%s'\n", name, handler.Path(), handler.Method())
 		if handler.Path() != "" && handler.Method() != "" {
 			e.Add(handler.Method(), handler.Path(), handler.Handle)
 			logger.Infof("Registered %s transport at: %s [%s]", name, handler.Path(), handler.Method())
+			fmt.Printf("DEBUG: Successfully registered HTTP route: %s %s\n", handler.Method(), handler.Path())
 			httpHandlerCount++
+		} else {
+			fmt.Printf("DEBUG: Skipping handler '%s' - empty path or method\n", name)
 		}
 		
 		// Health check for each handler
-		e.GET(fmt.Sprintf("/health/%s", name), handler.HealthCheck)
+		healthPath := fmt.Sprintf("/health/%s", name)
+		e.GET(healthPath, handler.HealthCheck)
+		fmt.Printf("DEBUG: Registered health check at: %s\n", healthPath)
 	}
+	fmt.Printf("DEBUG: Total HTTP handlers registered: %d\n", httpHandlerCount)
 
 	// Global health endpoint
 	e.GET("/health", func(c echo.Context) error {
