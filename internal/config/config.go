@@ -2,7 +2,6 @@ package config
 
 import (
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -106,38 +105,24 @@ func New() (Config, error) {
 	
 	// Set defaults first (lowest priority)
 	setDefaults(vp)
-	log.Printf("DEBUG: Default ChirpStack enabled: %v", vp.Get("protocols.chirpstack.enabled"))
 
 	// Load config file (medium priority) 
 	vp.SetConfigFile("configs/config.yaml")
 	if err := vp.ReadInConfig(); err != nil {
 		log.Printf("Config file not found, using defaults and environment variables")
-	} else {
-		log.Printf("DEBUG: Config file loaded, ChirpStack enabled: %v", vp.Get("protocols.chirpstack.enabled"))
 	}
 
 	// Load .env file (higher priority)
 	if err := godotenv.Load(".env"); err != nil {
 		log.Printf("No .env file found")
-	} else {
-		log.Printf("DEBUG: .env file loaded")
 	}
 
 	// Enable OS environment variables (highest priority)
 	vp.AutomaticEnv()
 	vp.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	vp.SetEnvPrefix("")
-	
-	log.Printf("DEBUG: Environment variable PROTOCOLS_CHIRPSTACK_ENABLED: %s", os.Getenv("PROTOCOLS_CHIRPSTACK_ENABLED"))
-	log.Printf("DEBUG: Viper value for protocols.chirpstack.enabled: %v", vp.Get("protocols.chirpstack.enabled"))
 
-	err := vp.Unmarshal(&config)
-	if err != nil {
-		return config, err
-	}
-	
-	log.Printf("DEBUG: Final config ChirpStack enabled: %v", config.Protocols.ChirpStack.Enabled)
-	return config, nil
+	return config, vp.Unmarshal(&config)
 }
 
 func setDefaults(vp *viper.Viper) {
