@@ -17,6 +17,8 @@ COPY . ./
 
 # Build the binary with optimizations.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o mpa-service ./cmd/mpa
+# Ensure binary is world-executable BEFORE copying to scratch
+RUN chmod 755 /app/mpa-service
 
 # Use scratch image for smallest possible container
 FROM scratch
@@ -38,13 +40,13 @@ USER 1000
 EXPOSE 80
 
 # Add health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD ["/app/mpa-service", "health"] || exit 1
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+#   CMD ["/app/mpa-service", "health"] || exit 1
 
 # Add metadata labels
 LABEL maintainer="Space-DF" \
-      description="Multi-Protocol Agent (MPA) service" \
-      version="1.0"
+  description="Multi-Protocol Agent (MPA) service" \
+  version="1.0"
 
 # Run the web service on container startup.
 CMD ["/app/mpa-service", "serve"]
