@@ -19,9 +19,11 @@ import (
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/websocket"
 	"github.com/Space-DF/mpa-service/internal/services"
+	"github.com/Space-DF/mpa-service/internal/telemetry"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 )
 
 var (
@@ -49,6 +51,10 @@ func init() {
 }
 
 func runServe(cmd *cobra.Command, args []string) {
+	// Initialize OpenTelemetry tracing
+	cleanup := telemetry.InitTracing("mpa-service")
+	defer cleanup()
+
 	fmt.Println("Starting MPA Service...")
 	cfg, err := config.New()
 	if err != nil {
@@ -228,6 +234,9 @@ func runServe(cmd *cobra.Command, args []string) {
 	// Create Echo instance
 	e := echo.New()
 	e.HideBanner = true
+
+	// OpenTelemetry middleware (must be first to trace all requests)
+	e.Use(otelecho.Middleware("mpa-service"))
 
 	// Security and operational middleware
 	e.Use(middleware.Logger())
