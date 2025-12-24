@@ -51,16 +51,16 @@ func init() {
 }
 
 func runServe(cmd *cobra.Command, args []string) {
-	// Initialize OpenTelemetry tracing
-	cleanup := telemetry.InitTracing("mpa-service")
-	defer cleanup()
-
 	fmt.Println("Starting MPA Service...")
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 	fmt.Println("Configuration loaded")
+
+	// Initialize OpenTelemetry tracing
+	cleanup := telemetry.InitTracing("mpa-service", cfg.OpenTelemetry)
+	defer cleanup()
 
 	// Override config with CLI flags if provided
 	if port != 0 {

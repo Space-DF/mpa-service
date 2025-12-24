@@ -52,3 +52,9 @@ protocols:
     
   helium:
     enabled: false
+
+# OpenTelemetry Configuration
+opentelemetry:
+  endpoint: "signoz-otel-collector:4317"
+  environment: "development"
+  sampling_ratio: 1.0

@@ -10,9 +10,10 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	MQTT     MQTTConfig     `mapstructure:"mqtt"`
-	Protocols ProtocolsConfig `mapstructure:"protocols"`
+	Server        ServerConfig   `mapstructure:"server"`
+	MQTT          MQTTConfig     `mapstructure:"mqtt"`
+	Protocols     ProtocolsConfig `mapstructure:"protocols"`
+	OpenTelemetry OpenTelemetryConfig `mapstructure:"opentelemetry"`
 }
 
 type ServerConfig struct {
@@ -97,6 +98,11 @@ type MQTTConfig struct {
 	Retained        bool     `mapstructure:"retained" env:"MQTT_RETAINED"`
 }
 
+type OpenTelemetryConfig struct {
+	Endpoint      string  `mapstructure:"endpoint" env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	Environment   string  `mapstructure:"environment" env:"OTEL_ENVIRONMENT"`
+	SamplingRatio float64 `mapstructure:"sampling_ratio" env:"OTEL_TRACES_SAMPLER_ARG"`
+}
 
 func New() (Config, error) {
 	var config Config
@@ -155,6 +161,11 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("protocols.chirpstack.enabled", false)
 	vp.SetDefault("protocols.ttn.enabled", false)
 	vp.SetDefault("protocols.helium.enabled", false)
+
+	// OpenTelemetry defaults
+	vp.SetDefault("opentelemetry.endpoint", "signoz-otel-collector:4317")
+	vp.SetDefault("opentelemetry.environment", "development")
+	vp.SetDefault("opentelemetry.sampling_ratio", 1.0)
 }
 
 func (c Config) ReadTimeout() time.Duration {
