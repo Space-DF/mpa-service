@@ -19,9 +19,11 @@ import (
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/websocket"
 	"github.com/Space-DF/mpa-service/internal/services"
+	"github.com/Space-DF/mpa-service/internal/telemetry"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 )
 
 var (
@@ -55,6 +57,10 @@ func runServe(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 	fmt.Println("Configuration loaded")
+
+	// Initialize OpenTelemetry tracing
+	cleanup := telemetry.InitTracing("mpa-service", cfg.OpenTelemetry)
+	defer cleanup()
 
 	// Override config with CLI flags if provided
 	if port != 0 {
@@ -228,6 +234,9 @@ func runServe(cmd *cobra.Command, args []string) {
 	// Create Echo instance
 	e := echo.New()
 	e.HideBanner = true
+
+	// OpenTelemetry middleware (must be first to trace all requests)
+	e.Use(otelecho.Middleware("mpa-service"))
 
 	// Security and operational middleware
 	e.Use(middleware.Logger())
