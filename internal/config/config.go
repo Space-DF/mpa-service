@@ -99,6 +99,7 @@ type MQTTConfig struct {
 }
 
 type OpenTelemetryConfig struct {
+	Enabled       bool    `mapstructure:"enabled" env:"OTEL_ENABLED"`
 	Endpoint      string  `mapstructure:"endpoint" env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	Environment   string  `mapstructure:"environment" env:"OTEL_ENVIRONMENT"`
 	SamplingRatio float64 `mapstructure:"sampling_ratio" env:"OTEL_TRACES_SAMPLER_ARG"`
@@ -163,6 +164,7 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("protocols.helium.enabled", false)
 
 	// OpenTelemetry defaults
+	vp.SetDefault("opentelemetry.enabled", false)
 	vp.SetDefault("opentelemetry.endpoint", "signoz-otel-collector:4317")
 	vp.SetDefault("opentelemetry.environment", "development")
 	vp.SetDefault("opentelemetry.sampling_ratio", 1.0)
