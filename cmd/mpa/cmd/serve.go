@@ -59,14 +59,8 @@ func runServe(cmd *cobra.Command, args []string) {
 	fmt.Println("Configuration loaded")
 
 	// Initialize OpenTelemetry tracing
-	var cleanup func()
-	if cfg.OpenTelemetry.Enabled {
-		cleanup = telemetry.InitTracing("mpa-service", cfg.OpenTelemetry)
-		defer cleanup()
-	} else {
-		cleanup = func() {}
-		defer cleanup()
-	}
+	cleanup := telemetry.InitTracing("mpa-service", cfg.OpenTelemetry)
+	defer cleanup()
 
 	// Override config with CLI flags if provided
 	if port != 0 {
