@@ -1,0 +1,60 @@
+# Server Configuration
+server:
+  port: 8080
+  log_level: "info"
+  read_timeout: 30
+  write_timeout: 30
+  idle_timeout: 60
+
+# MQTT Broker Configuration (disabled for HTTP-only mode)
+mqtt:
+  broker: "emqx"
+  port: 1883
+  client_id: "mpa-service"
+  username: ""
+  password: ""
+  topic: "tenant/{tenant_id}/device/data"
+  qos: 0
+  retained: false
+# Protocol Configuration
+protocols:
+  http:
+    enabled: true
+    path: "/http"
+  
+  sms:
+    enabled: false
+    provider: "twilio"
+    api_key: ""
+    api_secret: ""
+    webhook_url: ""
+    port: 8081
+  
+  websocket:
+    enabled: false
+    path: "/ws"
+    port: 8082
+  
+  mqtt_protocol:
+    enabled: false
+    port: 1884
+  
+  socketio:
+    enabled: false
+    path: "/socketio"
+    port: 8083
+  
+  chirpstack:
+    enabled: false
+  
+  ttn:
+    enabled: false
+    
+  helium:
+    enabled: false
+
+# OpenTelemetry Configuration
+opentelemetry:
+  endpoint: "signoz-otel-collector:4317"
+  environment: "development"
+  sampling_ratio: 1.0
