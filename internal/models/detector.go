@@ -31,21 +31,21 @@ func (pd *PathDetector) RegisterProfile(profile *DeviceProfile) {
 // DetectDevice attempts to detect device type from URL path
 func (pd *PathDetector) DetectDevice(request *http.Request, body []byte) (*DeviceProfile, error) {
 	path := request.URL.Path
-	
+
 	// Try exact path matches first
 	for pattern, profile := range pd.profiles {
 		if pattern == path {
 			return profile, nil
 		}
 	}
-	
+
 	// Try pattern matching (simple wildcard support)
 	for pattern, profile := range pd.profiles {
 		if pd.matchesPattern(path, pattern) {
 			return profile, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("no device profile matches path: %s", path)
 }
 
@@ -55,7 +55,7 @@ func (pd PathDetector) matchesPattern(path, pattern string) bool {
 	escaped := regexp.QuoteMeta(pattern)
 	regex := strings.ReplaceAll(escaped, "\\*", ".*")
 	regex = "^" + regex + "$"
-	
+
 	matched, _ := regexp.MatchString(regex, path)
 	return matched
 }
@@ -95,26 +95,26 @@ func (hd *HeaderDetector) DetectDevice(request *http.Request, body []byte) (*Dev
 	sort.Slice(hd.profiles, func(i, j int) bool {
 		return hd.profiles[i].Detection.Priority > hd.profiles[j].Detection.Priority
 	})
-	
+
 	for _, profile := range hd.profiles {
 		if hd.matchesProfile(request, profile) {
 			return profile, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("no device profile matches headers")
 }
 
 // matchesProfile checks if request headers match a device profile
 func (hd HeaderDetector) matchesProfile(request *http.Request, profile *DeviceProfile) bool {
 	detection := profile.Detection
-	
+
 	switch detection.Method {
 	case DetectionMethodHeader:
 		// Single header matching
 		headerValue := request.Header.Get(detection.Header)
 		return headerValue == detection.Value
-		
+
 	case DetectionMethodHeaders:
 		// Multiple headers matching
 		for headerName, expectedValue := range detection.Headers {
@@ -125,7 +125,7 @@ func (hd HeaderDetector) matchesProfile(request *http.Request, profile *DevicePr
 		}
 		return true
 	}
-	
+
 	return false
 }
 
@@ -163,18 +163,18 @@ func (pd *PayloadDetector) DetectDevice(request *http.Request, body []byte) (*De
 	if len(body) == 0 {
 		return nil, fmt.Errorf("empty payload for payload detection")
 	}
-	
+
 	// Sort profiles by priority (higher first)
 	sort.Slice(pd.profiles, func(i, j int) bool {
 		return pd.profiles[i].Detection.Priority > pd.profiles[j].Detection.Priority
 	})
-	
+
 	for _, profile := range pd.profiles {
 		if pd.matchesPayload(body, profile) {
 			return profile, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("no device profile matches payload structure")
 }
 
@@ -185,13 +185,13 @@ func (pd PayloadDetector) matchesPayload(body []byte, profile *DeviceProfile) bo
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return false
 	}
-	
+
 	// Check for ChirpStack-specific structure
 	if profile.Make == "chirpstack" {
 		_, hasEvent := payload["event"]
 		return hasEvent
 	}
-	
+
 	// For other profiles, check if required fields exist
 	for fieldName := range profile.Fields {
 		if _, exists := payload[fieldName]; !exists {
@@ -199,7 +199,7 @@ func (pd PayloadDetector) matchesPayload(body []byte, profile *DeviceProfile) bo
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -238,13 +238,13 @@ func (rbd *RuleBasedDetector) DetectDevice(request *http.Request, body []byte) (
 	sort.Slice(rbd.profiles, func(i, j int) bool {
 		return rbd.profiles[i].Detection.Priority > rbd.profiles[j].Detection.Priority
 	})
-	
+
 	for _, profile := range rbd.profiles {
 		if rbd.matchesRules(request, body, profile) {
 			return profile, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("no device profile matches detection rules")
 }
 
@@ -277,7 +277,7 @@ func (rbd RuleBasedDetector) matchesRule(request *http.Request, body []byte, rul
 // matchesHeaderRule checks if header rule matches
 func (rbd RuleBasedDetector) matchesHeaderRule(request *http.Request, rule DetectionRule) bool {
 	headerValue := request.Header.Get(rule.Field)
-	
+
 	switch rule.Operator {
 	case "equals":
 		return headerValue == rule.Value
@@ -296,7 +296,7 @@ func (rbd RuleBasedDetector) matchesHeaderRule(request *http.Request, rule Detec
 // matchesPathRule checks if path rule matches
 func (rbd RuleBasedDetector) matchesPathRule(request *http.Request, rule DetectionRule) bool {
 	path := request.URL.Path
-	
+
 	switch rule.Operator {
 	case "equals":
 		return path == rule.Value
@@ -316,10 +316,10 @@ func (rbd RuleBasedDetector) matchesPayloadRule(body []byte, rule DetectionRule)
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return false
 	}
-	
+
 	// Simple field existence check (can be enhanced with JSON path)
 	value, exists := payload[rule.Field]
-	
+
 	switch rule.Operator {
 	case "exists":
 		return exists

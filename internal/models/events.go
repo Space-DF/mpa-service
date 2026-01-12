@@ -11,16 +11,16 @@ type Location struct {
 
 // MQTTMessage represents the unified message structure to be sent to MQTT
 type MQTTMessage struct {
-	DeviceID        string                 `json:"device_id"`
-	DeviceName      string                 `json:"device_name"`
-	Timestamp       time.Time              `json:"timestamp"`
-	EventType       string                 `json:"event_type"`
-	
+	DeviceID   string    `json:"device_id"`
+	DeviceName string    `json:"device_name"`
+	Timestamp  time.Time `json:"timestamp"`
+	EventType  string    `json:"event_type"`
+
 	// Raw message data (preserved from original)
-	Data           []byte                 `json:"raw_data,omitempty"`
-	DecodedData    map[string]interface{} `json:"decoded_data,omitempty"`
-	Location       *Location              `json:"location,omitempty"`
-	
+	Data        []byte                 `json:"raw_data,omitempty"`
+	DecodedData map[string]interface{} `json:"decoded_data,omitempty"`
+	Location    *Location              `json:"location,omitempty"`
+
 	// Transport metadata (for forwarding mode)
-	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }

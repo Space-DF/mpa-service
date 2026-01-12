@@ -1,9 +1,9 @@
 package chirpstack
 
 import (
+	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan/base"
-	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/services"
 )
 

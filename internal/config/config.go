@@ -10,9 +10,9 @@ import (
 )
 
 type Config struct {
-	Server        ServerConfig   `mapstructure:"server"`
-	MQTT          MQTTConfig     `mapstructure:"mqtt"`
-	Protocols     ProtocolsConfig `mapstructure:"protocols"`
+	Server        ServerConfig        `mapstructure:"server"`
+	MQTT          MQTTConfig          `mapstructure:"mqtt"`
+	Protocols     ProtocolsConfig     `mapstructure:"protocols"`
 	OpenTelemetry OpenTelemetryConfig `mapstructure:"opentelemetry"`
 }
 
@@ -25,15 +25,15 @@ type ServerConfig struct {
 }
 
 type ProtocolsConfig struct {
-	HTTP       HTTPConfig         `mapstructure:"http"`
-	SMS        SMSConfig          `mapstructure:"sms"`
-	WebSocket  WebSocketConfig    `mapstructure:"websocket"`
-	MQTT       MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
-	LoRaWAN    LoRaWANConfig      `mapstructure:"lorawan"`
+	HTTP      HTTPConfig         `mapstructure:"http"`
+	SMS       SMSConfig          `mapstructure:"sms"`
+	WebSocket WebSocketConfig    `mapstructure:"websocket"`
+	MQTT      MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
+	LoRaWAN   LoRaWANConfig      `mapstructure:"lorawan"`
 	// Backward compatibility - these will be deprecated
-	ChirpStack ChirpStackConfig   `mapstructure:"chirpstack"`
-	TTN        TTNConfig          `mapstructure:"ttn"`
-	Helium     HeliumConfig       `mapstructure:"helium"`
+	ChirpStack ChirpStackConfig `mapstructure:"chirpstack"`
+	TTN        TTNConfig        `mapstructure:"ttn"`
+	Helium     HeliumConfig     `mapstructure:"helium"`
 }
 
 // Protocol-specific configurations
@@ -109,11 +109,11 @@ func New() (Config, error) {
 	var config Config
 
 	vp := viper.New()
-	
+
 	// Set defaults first (lowest priority)
 	setDefaults(vp)
 
-	// Load config file (medium priority) 
+	// Load config file (medium priority)
 	vp.SetConfigFile("configs/config.yaml")
 	if err := vp.ReadInConfig(); err != nil {
 		log.Printf("Config file not found, using defaults and environment variables")
@@ -144,7 +144,7 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("mqtt.topic_template", "tenant/{tenant_id}/device/data")
 	vp.SetDefault("mqtt.subscribe_topics", []string{
 		"*/device/data",
-		"*/device/status", 
+		"*/device/status",
 		"*/device/telemetry",
 	})
 	vp.SetDefault("mqtt.qos", 0)

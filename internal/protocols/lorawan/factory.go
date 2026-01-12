@@ -2,7 +2,7 @@ package lorawan
 
 import (
 	"fmt"
-	
+
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan/base"
@@ -49,7 +49,7 @@ func (f *LoRaWANHandlerFactory) CreateHandler() handlers.ProtocolHandler {
 	if f.deviceService == nil || f.logger == nil {
 		panic(fmt.Sprintf("LoRaWANHandlerFactory for %s not properly initialized - missing dependencies. Use SetupFactory() or direct constructors like NewChirpStackFactory()", f.providerName))
 	}
-	
+
 	baseConfig := base.Config{
 		Provider: f.providerName,
 	}
@@ -70,7 +70,7 @@ func RegisterLoRaWANFactories() {
 		panic(fmt.Sprintf("failed to register chirpstack factory: %v", err))
 	}
 
-	// Register TTN - factory needs dependencies set via SetupFactory before use  
+	// Register TTN - factory needs dependencies set via SetupFactory before use
 	if err := handlers.Register("ttn", func() handlers.ProtocolHandlerFactory {
 		return &LoRaWANHandlerFactory{providerName: "ttn"}
 	}); err != nil {

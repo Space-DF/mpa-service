@@ -10,13 +10,13 @@ import (
 type DevicePayloadParser interface {
 	// Parse converts raw payload data to DeviceMessage
 	Parse(rawData []byte, profile *DeviceProfile, request *http.Request) (*DeviceMessage, error)
-	
+
 	// Validate checks if the payload is valid for this parser
 	Validate(rawData []byte, profile *DeviceProfile) error
-	
+
 	// GetSupportedDeviceTypes returns device types this parser can handle
 	GetSupportedDeviceTypes() []string
-	
+
 	// GetParserName returns the name of this parser
 	GetParserName() string
 }
@@ -51,17 +51,17 @@ func (pr *ParserRegistry) GetParserForDevice(profile *DeviceProfile) (DevicePayl
 	if parser, exists := pr.parsers[parserName]; exists {
 		return parser, nil
 	}
-	
+
 	// Try by make only
 	if parser, exists := pr.parsers[profile.Make]; exists {
 		return parser, nil
 	}
-	
+
 	// Fall back to generic parser
 	if parser, exists := pr.parsers["generic"]; exists {
 		return parser, nil
 	}
-	
+
 	return nil, fmt.Errorf("no parser found for device profile: %s", profile.ID)
 }
 
@@ -72,8 +72,8 @@ func (pr *ParserRegistry) GetAllParsers() map[string]DevicePayloadParser {
 
 // BaseParser provides common functionality for all parsers
 type BaseParser struct {
-	Name               string
-	SupportedDevices   []string
+	Name             string
+	SupportedDevices []string
 }
 
 // GetParserName returns the parser name
@@ -114,34 +114,34 @@ func (gjp *GenericJSONParser) Parse(rawData []byte, profile *DeviceProfile, requ
 	if err := gjp.Validate(rawData, profile); err != nil {
 		return nil, err
 	}
-	
+
 	var payload map[string]interface{}
 	if err := json.Unmarshal(rawData, &payload); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON payload: %w", err)
 	}
-	
+
 	// Extract fields using mappings from device profile
 	deviceID := gjp.extractField(payload, profile.Fields["device_id"])
 	deviceName := gjp.extractField(payload, profile.Fields["device_name"])
 	messageType := gjp.extractField(payload, profile.Fields["message_type"])
-	
+
 	// If message_type is not specified, use default
 	if messageType == "" {
 		messageType = "data"
 	}
-	
+
 	// Build metadata from request
 	metadata := make(map[string]interface{})
 	metadata["http_method"] = request.Method
 	metadata["http_path"] = request.URL.Path
 	metadata["user_agent"] = request.Header.Get("User-Agent")
 	metadata["remote_addr"] = request.RemoteAddr
-	
+
 	// Add device profile metadata
 	for k, v := range profile.Metadata {
 		metadata[k] = v
 	}
-	
+
 	return &DeviceMessage{
 		Profile:     profile,
 		DeviceID:    deviceID,
@@ -158,7 +158,7 @@ func (gjp GenericJSONParser) extractField(payload map[string]interface{}, fieldP
 	if fieldPath == "" {
 		return ""
 	}
-	
+
 	// Simple implementation - can be enhanced with proper JSON path parsing
 	if value, exists := payload[fieldPath]; exists {
 		if str, ok := value.(string); ok {
@@ -166,7 +166,6 @@ func (gjp GenericJSONParser) extractField(payload map[string]interface{}, fieldP
 		}
 		return fmt.Sprintf("%v", value)
 	}
-	
+
 	return ""
 }
-

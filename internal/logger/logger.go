@@ -16,7 +16,7 @@ type Logger struct {
 
 func New(logLevel string) *Logger {
 	flags := log.Ldate | log.Ltime | log.Lshortfile
-	
+
 	return &Logger{
 		debugLogger: log.New(os.Stdout, "DEBUG: ", flags),
 		infoLogger:  log.New(os.Stdout, "INFO: ", flags),

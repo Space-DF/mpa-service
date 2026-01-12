@@ -1,31 +1,31 @@
 package handlers
 
 import (
-	"github.com/labstack/echo/v4"
 	"github.com/Space-DF/mpa-service/internal/mqtt"
+	"github.com/labstack/echo/v4"
 )
 
 // ProtocolHandler defines the interface for all protocol handlers
 type ProtocolHandler interface {
 	// Name returns the protocol name
 	Name() string
-	
+
 	// Path returns the HTTP endpoint path for this protocol
 	Path() string
-	
+
 	// Method returns the HTTP method this handler expects
 	Method() string
-	
+
 	// Handle processes the incoming request
 	Handle(c echo.Context) error
-	
+
 	// HealthCheck returns health status for this protocol handler
 	HealthCheck(c echo.Context) error
 }
 
 // HandlerManager manages all protocol handlers
 type HandlerManager struct {
-	handlers map[string]ProtocolHandler
+	handlers   map[string]ProtocolHandler
 	mqttClient mqtt.ClientInterface
 }
 

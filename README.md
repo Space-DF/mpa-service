@@ -20,36 +20,36 @@ A comprehensive IoT protocol gateway that automatically detects device types and
 ```
 IoT Devices (Various Makes/Models)
      ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    Transport Protocols                      │
+┌───────────────────────────────────────────────────────────┐
+│                    Transport Protocols                    │
 ├─────────────┬─────────────┬─────────────┬─────────────────┤
 │    HTTP     │    MQTT     │  WebSocket  │    SocketIO     │
 │  POST /http │ Subscriber  │   /ws       │  /socket.io/    │
 └─────────────┴─────────────┴─────────────┴─────────────────┘
      ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Device Detection                          │
+┌───────────────────────────────────────────────────────────┐
+│                   Device Detection                        │
 ├─────────────┬─────────────┬─────────────┬─────────────────┤
 │    Path     │   Header    │   Payload   │     Rules       │
 │   Based     │    Based    │   Analysis  │  Conditional    │
 └─────────────┴─────────────┴─────────────┴─────────────────┘
      ↓
-┌─────────────────────────────────────────────────────────────┐
-│                Device-Specific Parsers                      │
+┌───────────────────────────────────────────────────────────┐
+│                Device-Specific Parsers                    │
 ├─────────────┬─────────────┬─────────────┬─────────────────┤
 │   RAK2270   │   RAK7200   │ Dragino LHT │ Generic LoRaWAN │
 │   Tracker   │   EnvSensor │    65       │   (fallback)    │
 └─────────────┴─────────────┴─────────────┴─────────────────┘
      ↓
-┌─────────────────────────────────────────────────────────────┐
-│                 Unified MQTT Output                         │
-│            (Standardized Message Format)                    │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│                 Unified MQTT Output                       │
+│            (Standardized Message Format)                  │
+└───────────────────────────────────────────────────────────┘
      ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   MQTT Broker                              │
-│              (Your Main Data Stream)                        │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│                   MQTT Broker                             │
+│              (Your Main Data Stream)                      │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -100,6 +100,46 @@ CMD ["./main"]
 ```
 
 ## Configuration
+Create a `.env` file with the following example settings:
+
+```bash
+# Server Configuration
+SERVER_LOG_LEVEL=info
+SERVER_API_PORT=8080
+SERVER_READ_TIMEOUT=30
+SERVER_WRITE_TIMEOUT=30
+
+# MQTT Output Configuration (where to publish normalized data)
+MQTT_BROKER=localhost
+MQTT_PORT=1883
+MQTT_CLIENT_ID=mpa-service
+MQTT_USERNAME=admin
+MQTT_PASSWORD=public
+MQTT_TOPIC=mpa/devices/data
+MQTT_QOS=0
+MQTT_RETAINED=false
+
+# HTTP Protocol Configuration
+PROTOCOLS_HTTP_ENABLED=true
+PROTOCOLS_HTTP_PATH=/http
+
+# SMS Protocol Configuration
+PROTOCOLS_SMS_ENABLED=false
+PROTOCOLS_SMS_PROVIDER=twilio
+PROTOCOLS_SMS_API_KEY=
+PROTOCOLS_SMS_API_SECRET=
+PROTOCOLS_SMS_WEBHOOK_URL=
+PROTOCOLS_SMS_PORT=8081
+
+# WebSocket Protocol Configuration
+PROTOCOLS_WEBSOCKET_ENABLED=false
+PROTOCOLS_WEBSOCKET_PATH=/ws
+PROTOCOLS_WEBSOCKET_PORT=8082
+
+# MQTT Protocol Configuration
+PROTOCOLS_MQTT_PROTOCOL_ENABLED=false
+PROTOCOLS_MQTT_PROTOCOL_PORT=1884
+```
 
 ### HTTP Server Settings
 
@@ -438,6 +478,4 @@ The service provides structured logging with different levels:
 4. Add tests
 5. Submit a pull request
 
-## License
-
-MIT License - see LICENSE file for details.
+[![SpaceDF - A project from Digital Fortress](https://df.technology/images/SpaceDF.png)](https://df.technology/)

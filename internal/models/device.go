@@ -19,39 +19,39 @@ type DeviceProfile struct {
 
 // DetectionConfig defines how to detect if a request matches this device profile
 type DetectionConfig struct {
-	Method   DetectionMethod           `yaml:"method" json:"method"`
-	Pattern  string                    `yaml:"pattern,omitempty" json:"pattern,omitempty"`
-	Header   string                    `yaml:"header,omitempty" json:"header,omitempty"`
-	Value    string                    `yaml:"value,omitempty" json:"value,omitempty"`
-	Headers  map[string]string         `yaml:"headers,omitempty" json:"headers,omitempty"`
-	Rules    []DetectionRule           `yaml:"rules,omitempty" json:"rules,omitempty"`
-	Priority int                       `yaml:"priority" json:"priority"` // Higher priority checked first
+	Method   DetectionMethod   `yaml:"method" json:"method"`
+	Pattern  string            `yaml:"pattern,omitempty" json:"pattern,omitempty"`
+	Header   string            `yaml:"header,omitempty" json:"header,omitempty"`
+	Value    string            `yaml:"value,omitempty" json:"value,omitempty"`
+	Headers  map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
+	Rules    []DetectionRule   `yaml:"rules,omitempty" json:"rules,omitempty"`
+	Priority int               `yaml:"priority" json:"priority"` // Higher priority checked first
 }
 
 // DetectionMethod defines different ways to detect device types
 type DetectionMethod string
 
 const (
-	DetectionMethodPath    DetectionMethod = "path"      // Match URL path pattern
-	DetectionMethodHeader  DetectionMethod = "header"    // Match single header value
-	DetectionMethodHeaders DetectionMethod = "headers"   // Match multiple headers
-	DetectionMethodPayload DetectionMethod = "payload"   // Analyze payload structure
-	DetectionMethodRules   DetectionMethod = "rules"     // Complex rule-based detection
+	DetectionMethodPath    DetectionMethod = "path"    // Match URL path pattern
+	DetectionMethodHeader  DetectionMethod = "header"  // Match single header value
+	DetectionMethodHeaders DetectionMethod = "headers" // Match multiple headers
+	DetectionMethodPayload DetectionMethod = "payload" // Analyze payload structure
+	DetectionMethodRules   DetectionMethod = "rules"   // Complex rule-based detection
 )
 
 // DetectionRule allows complex detection logic
 type DetectionRule struct {
-	Type      string `yaml:"type" json:"type"`           // "header", "path", "payload"
-	Field     string `yaml:"field" json:"field"`         // Header name or JSON path
-	Operator  string `yaml:"operator" json:"operator"`   // "equals", "contains", "exists", "regex"
-	Value     string `yaml:"value" json:"value"`         // Expected value
-	Required  bool   `yaml:"required" json:"required"`   // Must match for device to be detected
+	Type     string `yaml:"type" json:"type"`         // "header", "path", "payload"
+	Field    string `yaml:"field" json:"field"`       // Header name or JSON path
+	Operator string `yaml:"operator" json:"operator"` // "equals", "contains", "exists", "regex"
+	Value    string `yaml:"value" json:"value"`       // Expected value
+	Required bool   `yaml:"required" json:"required"` // Must match for device to be detected
 }
 
 // DeviceRegistry manages device profiles and detection
 type DeviceRegistry struct {
-	profiles    map[string]*DeviceProfile
-	detectors   []DeviceDetector
+	profiles       map[string]*DeviceProfile
+	detectors      []DeviceDetector
 	defaultProfile *DeviceProfile
 }
 
@@ -108,12 +108,12 @@ func (dr *DeviceRegistry) DetectDevice(request *http.Request, body []byte) (*Dev
 			return profile, nil
 		}
 	}
-	
+
 	// If no detector matches, return default profile
 	if dr.defaultProfile != nil {
 		return dr.defaultProfile, nil
 	}
-	
+
 	return nil, fmt.Errorf("no device profile detected and no default profile configured")
 }
 

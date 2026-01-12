@@ -3,10 +3,10 @@ package examples
 import (
 	"fmt"
 
-	"github.com/labstack/echo/v4"
 	"github.com/Space-DF/mpa-service/internal/logger"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
+	"github.com/labstack/echo/v4"
 )
 
 // GetProtocolHandler demonstrates the registry pattern usage
@@ -99,7 +99,7 @@ func (h *CustomProtocolHandler) Handle(c echo.Context) error {
 
 func (h *CustomProtocolHandler) HealthCheck(c echo.Context) error {
 	return c.JSON(200, map[string]interface{}{
-		"status": "healthy",
+		"status":   "healthy",
 		"protocol": "custom",
 	})
 }

@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/labstack/echo/v4"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/services"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/labstack/echo/v4"
 )
 
 // Handler implements MQTT subscriber transport handler for multi-device support
@@ -68,15 +68,15 @@ func (h *Handler) Handle(c echo.Context) error {
 func (h *Handler) HealthCheck(c echo.Context) error {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
-	
+
 	isConnected := h.mqttClient != nil && h.mqttClient.IsConnected()
 	healthStatus := h.deviceService.GetHealthStatus()
-	
+
 	status := "healthy"
 	if !isConnected || !h.isRunning {
 		status = "unhealthy"
 	}
-	
+
 	return c.JSON(200, map[string]interface{}{
 		"transport":          "mqtt-subscriber",
 		"status":             status,
@@ -96,11 +96,11 @@ func (h *Handler) HealthCheck(c echo.Context) error {
 func (h *Handler) Start() error {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	
+
 	if h.isRunning {
 		return fmt.Errorf("MQTT subscriber already running")
 	}
-	
+
 	// Create MQTT client options
 	broker := fmt.Sprintf("tcp://%s:%d", h.config.Broker, h.config.Port)
 	opts := mqtt.NewClientOptions()
@@ -112,31 +112,31 @@ func (h *Handler) Start() error {
 	opts.SetConnectRetry(true)
 	opts.SetConnectRetryInterval(5 * time.Second)
 	opts.SetKeepAlive(60 * time.Second)
-	
+
 	// Set connection handlers
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		log.Printf("MQTT Subscriber: Connected to broker at %s", broker)
 		h.subscribeToTopics()
 	})
-	
+
 	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
 		log.Printf("MQTT Subscriber: Connection lost to broker: %v", err)
 	})
-	
+
 	opts.SetReconnectingHandler(func(client mqtt.Client, options *mqtt.ClientOptions) {
 		log.Printf("MQTT Subscriber: Attempting to reconnect to broker...")
 	})
-	
+
 	// Create and connect client
 	h.mqttClient = mqtt.NewClient(opts)
-	
+
 	if token := h.mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to connect to MQTT broker: %w", token.Error())
 	}
-	
+
 	h.isRunning = true
 	log.Printf("MQTT Subscriber: Started and connected to %s", broker)
-	
+
 	return nil
 }
 
@@ -144,11 +144,11 @@ func (h *Handler) Start() error {
 func (h *Handler) Stop() error {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	
+
 	if !h.isRunning {
 		return fmt.Errorf("MQTT subscriber not running")
 	}
-	
+
 	if h.mqttClient != nil && h.mqttClient.IsConnected() {
 		// Unsubscribe from all topics
 		for _, topic := range h.config.SubscribeTopics {
@@ -156,11 +156,11 @@ func (h *Handler) Stop() error {
 				log.Printf("MQTT Subscriber: Error unsubscribing from topic %s: %v", topic, token.Error())
 			}
 		}
-		
+
 		h.mqttClient.Disconnect(250)
 		log.Printf("MQTT Subscriber: Disconnected from broker")
 	}
-	
+
 	h.isRunning = false
 	return nil
 }
@@ -183,27 +183,27 @@ func (h *Handler) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	h.messageCount++
 	h.lastMessage = time.Now()
 	h.mutex.Unlock()
-	
-	log.Printf("MQTT Subscriber: Received message on topic: %s (payload size: %d bytes)", 
+
+	log.Printf("MQTT Subscriber: Received message on topic: %s (payload size: %d bytes)",
 		msg.Topic(), len(msg.Payload()))
-	
+
 	// Prepare transport metadata
 	transportMetadata := map[string]interface{}{
-		"transport":     "mqtt-subscriber",
-		"topic":         msg.Topic(),
-		"qos":           msg.Qos(),
-		"retained":      msg.Retained(),
-		"duplicate":     msg.Duplicate(),
-		"message_id":    msg.MessageID(),
-		"received_at":   h.lastMessage.UTC().Format(time.RFC3339),
+		"transport":   "mqtt-subscriber",
+		"topic":       msg.Topic(),
+		"qos":         msg.Qos(),
+		"retained":    msg.Retained(),
+		"duplicate":   msg.Duplicate(),
+		"message_id":  msg.MessageID(),
+		"received_at": h.lastMessage.UTC().Format(time.RFC3339),
 	}
-	
+
 	// Process message through device service
 	if err := h.deviceService.ProcessMQTTMessage(msg.Topic(), msg.Payload(), transportMetadata); err != nil {
 		log.Printf("MQTT Subscriber: Error processing message from topic %s: %v", msg.Topic(), err)
 		return
 	}
-	
+
 	log.Printf("MQTT Subscriber: Successfully processed message from topic: %s", msg.Topic())
 }
 
@@ -237,20 +237,20 @@ func (h *Handler) GetSubscribedTopics() []string {
 func (h *Handler) AddSubscription(topic string) error {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	
+
 	if !h.isRunning || h.mqttClient == nil || !h.mqttClient.IsConnected() {
 		return fmt.Errorf("MQTT subscriber not running or not connected")
 	}
-	
+
 	token := h.mqttClient.Subscribe(topic, h.config.QOS, h.messageHandler)
 	if token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to subscribe to topic %s: %w", topic, token.Error())
 	}
-	
+
 	// Add to config for tracking
 	h.config.SubscribeTopics = append(h.config.SubscribeTopics, topic)
 	log.Printf("MQTT Subscriber: Added subscription to topic: %s", topic)
-	
+
 	return nil
 }
 
@@ -258,16 +258,16 @@ func (h *Handler) AddSubscription(topic string) error {
 func (h *Handler) RemoveSubscription(topic string) error {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	
+
 	if !h.isRunning || h.mqttClient == nil || !h.mqttClient.IsConnected() {
 		return fmt.Errorf("MQTT subscriber not running or not connected")
 	}
-	
+
 	token := h.mqttClient.Unsubscribe(topic)
 	if token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to unsubscribe from topic %s: %w", topic, token.Error())
 	}
-	
+
 	// Remove from config
 	for i, t := range h.config.SubscribeTopics {
 		if t == topic {
@@ -275,7 +275,7 @@ func (h *Handler) RemoveSubscription(topic string) error {
 			break
 		}
 	}
-	
+
 	log.Printf("MQTT Subscriber: Removed subscription from topic: %s", topic)
 	return nil
 }
