@@ -1,7 +1,7 @@
 # Use the official golang image to create a binary.
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
-FROM golang:1.24-bookworm as builder
+FROM --platform=$BUILDPLATFORM golang:1.24-bookworm AS builder
 
 # Create and change to the app directory.
 WORKDIR /app
@@ -12,12 +12,23 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy local code to the container image.
-COPY . ./
+# Copy source
+COPY . .
 
-# Build the binary with optimizations.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o mpa-service ./cmd/mpa
-# Ensure binary is world-executable BEFORE copying to scratch
+# Build args from buildx
+ARG TARGETOS
+ARG TARGETARCH
+
+# Build static binary for correct platform
+RUN CGO_ENABLED=0 \
+    GOOS=$TARGETOS \
+    GOARCH=$TARGETARCH \
+    go build \
+      -trimpath \
+      -ldflags="-s -w" \
+      -o mpa-service \
+      ./cmd/mpa
+
 RUN chmod 755 /app/mpa-service
 
 # Use scratch image for smallest possible container
@@ -38,10 +49,6 @@ USER 1000
 
 # Expose the default port
 EXPOSE 80
-
-# Add health check
-# HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-#   CMD ["/app/mpa-service", "health"] || exit 1
 
 # Add metadata labels
 LABEL maintainer="Space-DF" \
