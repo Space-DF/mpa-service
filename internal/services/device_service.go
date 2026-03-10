@@ -30,10 +30,6 @@ func NewDeviceService(mqttClient mqtt.ClientInterface) *DeviceService {
 	return service
 }
 
-// createDefaultProfiles - REMOVED: Device detection not needed for forwarding service
-
-// initializeDetectors - REMOVED: Device detection not needed for forwarding service
-
 // ProcessHTTPMessage processes an HTTP request and publishes to MQTT
 func (ds *DeviceService) ProcessHTTPMessage(request *http.Request, body []byte, transportMetadata map[string]interface{}) error {
 	log.Printf("DeviceService: 🚀 Processing HTTP message (body size: %d bytes)", len(body))
@@ -72,14 +68,6 @@ func (ds *DeviceService) ProcessWebSocketMessage(message []byte, connectionMetad
 	// Forward message directly to MQTT without device detection
 	return ds.forwardToMQTT(message, mockRequest, connectionMetadata)
 }
-
-// detectDevice - REMOVED: Device detection not needed for forwarding service
-
-// detectDeviceFromMQTT - REMOVED: Device detection not needed for forwarding service
-
-// detectDeviceFromWebSocket - REMOVED: Device detection not needed for forwarding service
-
-// parseAndPublish - REMOVED: Parsing not needed for forwarding service
 
 // forwardToMQTT forwards raw message directly to MQTT with flexible topic generation
 func (ds *DeviceService) forwardToMQTT(payload []byte, request *http.Request, metadata map[string]interface{}) error {
@@ -128,17 +116,14 @@ func (ds *DeviceService) forwardToMQTT(payload []byte, request *http.Request, me
 	return nil
 }
 
-// AddDeviceProfile - REMOVED: Device profiles not needed for forwarding service
 func (ds *DeviceService) AddDeviceProfile(profile *models.DeviceProfile) error {
 	return fmt.Errorf("device profiles not supported in forwarding mode")
 }
 
-// AddParser - REMOVED: Parsers not needed for forwarding service
 func (ds *DeviceService) AddParser(name string, parser models.DevicePayloadParser) {
 	log.Printf("DeviceService: Parsers not supported in forwarding mode")
 }
 
-// GetDeviceProfiles - REMOVED: Device profiles not needed for forwarding service
 func (ds *DeviceService) GetDeviceProfiles() map[string]*models.DeviceProfile {
 	return make(map[string]*models.DeviceProfile) // Empty map for forwarding mode
 }
