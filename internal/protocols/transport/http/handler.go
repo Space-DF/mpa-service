@@ -134,7 +134,7 @@ func (h *Handler) Handle(c echo.Context) error {
 	transportMetadata["tenant_id"] = tenantID
 	h.logger.Infof("HTTP Transport: Tenant extraction successful from subdomain, tenant_id = %s", tenantID)
 
-	// CALL DEVICE SERVICE WITH TENANT INFORMATION
+	// Call service with tenant information
 	if err := h.deviceService.ProcessHTTPMessage(c.Request(), body, transportMetadata); err != nil {
 		h.logger.Errorf("HTTP Transport: Error processing message: %v", err)
 		return echo.NewHTTPError(500, "Internal processing error")
@@ -233,34 +233,3 @@ func (h *Handler) extractTenantFromSubdomain(host string) string {
 	// e.g., "spacedf.localhost" -> ["spacedf", "localhost"] -> "spacedf"
 	return parts[0]
 }
-
-// I will use this function later if needed
-// extractTenantInfo extracts tenant information from HTTP headers
-// func (h *Handler) extractTenantInfo(c echo.Context, metadata map[string]interface{}) {
-// 	// Check common tenant header patterns
-// 	tenantHeaders := []string{
-// 		"X-Tenant-ID",
-// 		"X-Organization",
-// 		"X-Tenant",
-// 		"X-Space-ID",
-// 		"Tenant-ID",
-// 		"Organization",
-// 	}
-// 	for _, headerName := range tenantHeaders {
-// 		if value := c.Request().Header.Get(headerName); value != "" {
-// 			metadata["tenant_id"] = value
-// 			h.logger.Infof("HTTP Transport: Extracted tenant from header %s: %s", headerName, value)
-// 			break
-// 		}
-// 	}
-
-// 	// Check for tenant in path (e.g., /tenant/acme-corp/device/data)
-// 	path := c.Request().URL.Path
-// 	if strings.HasPrefix(path, "/tenant/") {
-// 		parts := strings.Split(path, "/")
-// 		if len(parts) >= 3 {
-// 			metadata["tenant_id"] = parts[2]
-// 			h.logger.Infof("HTTP Transport: Extracted tenant from path: %s", parts[2])
-// 		}
-// 	}
-// }
