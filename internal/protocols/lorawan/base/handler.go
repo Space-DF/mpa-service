@@ -45,7 +45,7 @@ func (h LoRaWANHandler) Name() string {
 
 // Path returns the HTTP endpoint path
 func (h LoRaWANHandler) Path() string {
-	return fmt.Sprintf("/lorawan/%s/http", h.provider)
+	return fmt.Sprintf("/%s/http", h.provider)
 }
 
 // Method returns the HTTP method
