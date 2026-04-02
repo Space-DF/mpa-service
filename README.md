@@ -119,9 +119,10 @@ MQTT_TOPIC=mpa/devices/data
 MQTT_QOS=0
 MQTT_RETAINED=false
 
-# HTTP Protocol Configuration
-PROTOCOLS_HTTP_ENABLED=true
-PROTOCOLS_HTTP_PATH=/http
+# Protocol Configuration
+PROTOCOLS_CHIRPSTACK_ENABLED=true
+PROTOCOLS_TTN_ENABLED=true
+PROTOCOLS_HELIUM_ENABLED=true
 
 # SMS Protocol Configuration
 PROTOCOLS_SMS_ENABLED=false

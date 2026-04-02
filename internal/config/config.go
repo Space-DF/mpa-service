@@ -25,23 +25,16 @@ type ServerConfig struct {
 }
 
 type ProtocolsConfig struct {
-	HTTP      HTTPConfig         `mapstructure:"http"`
-	SMS       SMSConfig          `mapstructure:"sms"`
-	WebSocket WebSocketConfig    `mapstructure:"websocket"`
-	MQTT      MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
-	LoRaWAN   LoRaWANConfig      `mapstructure:"lorawan"`
-	// Backward compatibility - these will be deprecated
-	ChirpStack ChirpStackConfig `mapstructure:"chirpstack"`
-	TTN        TTNConfig        `mapstructure:"ttn"`
-	Helium     HeliumConfig     `mapstructure:"helium"`
+	SMS        SMSConfig          `mapstructure:"sms"`
+	WebSocket  WebSocketConfig    `mapstructure:"websocket"`
+	MQTT       MQTTProtocolConfig `mapstructure:"mqtt_protocol"`
+	LoRaWAN    LoRaWANConfig      `mapstructure:"lorawan"`
+	ChirpStack ChirpStackConfig   `mapstructure:"chirpstack"`
+	TTN        TTNConfig          `mapstructure:"ttn"`
+	Helium     HeliumConfig       `mapstructure:"helium"`
 }
 
 // Protocol-specific configurations
-type HTTPConfig struct {
-	Enabled bool   `mapstructure:"enabled" env:"PROTOCOLS_HTTP_ENABLED"`
-	Path    string `mapstructure:"path" env:"PROTOCOLS_HTTP_PATH"`
-}
-
 type SMSConfig struct {
 	Enabled    bool   `mapstructure:"enabled" env:"PROTOCOLS_SMS_ENABLED"`
 	Provider   string `mapstructure:"provider" env:"PROTOCOLS_SMS_PROVIDER"`
@@ -149,8 +142,6 @@ func setDefaults(vp *viper.Viper) {
 	})
 	vp.SetDefault("mqtt.qos", 0)
 	vp.SetDefault("mqtt.retained", false)
-	vp.SetDefault("protocols.http.enabled", true)
-	vp.SetDefault("protocols.http.path", "/http")
 	vp.SetDefault("protocols.sms.enabled", false)
 	vp.SetDefault("protocols.sms.provider", "twilio")
 	vp.SetDefault("protocols.sms.port", 8081)
