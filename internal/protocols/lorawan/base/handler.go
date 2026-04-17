@@ -92,6 +92,7 @@ func (h *LoRaWANHandler) Handle(c echo.Context) error {
 		"transport":      "http",
 		"lorawan_source": h.provider,
 		"path":           c.Request().URL.Path,
+		"query":          c.Request().URL.RawQuery,
 		"received_at":    startTime.UTC().Format(time.RFC3339),
 	}
 
