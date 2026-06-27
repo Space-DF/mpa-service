@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # Use the official golang image to create a binary.
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
@@ -8,7 +9,8 @@ WORKDIR /app
 
 # Cache deps
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy source
 COPY . .
@@ -18,7 +20,9 @@ ARG TARGETOS
 ARG TARGETARCH
 
 # Build static binary for correct platform
-RUN CGO_ENABLED=0 \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 \
     GOOS=$TARGETOS \
     GOARCH=$TARGETARCH \
     go build \
