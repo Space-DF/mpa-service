@@ -49,6 +49,9 @@ protocols:
   helium:
     enabled: false
 
+  api:
+    enabled: true
+
 # OpenTelemetry Configuration
 opentelemetry:
   endpoint: "signoz-otel-collector:4317"

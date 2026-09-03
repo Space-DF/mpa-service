@@ -30,6 +30,7 @@ import (
 	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan"
+	nonlorawan "github.com/Space-DF/mpa-service/internal/protocols/non-lorawan"
 	mqttprotocol "github.com/Space-DF/mpa-service/internal/protocols/transport/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/websocket"
@@ -154,6 +155,14 @@ func runServe(cmd *cobra.Command, args []string) {
 		heliumHandler := heliumFactory.CreateHandler()
 		handlerManager.Register(heliumHandler)
 		logger.Infof("Registered Helium transport handler at path: /helium/http")
+		transportCount++
+	}
+
+	// 4. API HTTP Transport for non-LoRaWAN devices
+	if cfg.Protocols.API.Enabled {
+		apiHandler := nonlorawan.NewHandler(deviceService, logger)
+		handlerManager.Register(apiHandler)
+		logger.Infof("Registered API transport handler at path: %s", apiHandler.Path())
 		transportCount++
 	}
 

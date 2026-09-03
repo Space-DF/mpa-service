@@ -87,7 +87,9 @@ func (ds *DeviceService) forwardToMQTT(payload []byte, request *http.Request, me
 		if mqttMessage.Metadata == nil {
 			mqttMessage.Metadata = make(map[string]interface{})
 		}
-		mqttMessage.Metadata["request_path"] = request.URL.Path
+		if request.URL != nil {
+			mqttMessage.Metadata["request_path"] = request.URL.Path
+		}
 		mqttMessage.Metadata["request_method"] = request.Method
 		if userAgent := request.Header.Get("User-Agent"); userAgent != "" {
 			mqttMessage.Metadata["user_agent"] = userAgent
