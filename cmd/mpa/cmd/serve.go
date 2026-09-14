@@ -252,12 +252,12 @@ func runServe(cmd *cobra.Command, args []string) {
 	e.Use(otelecho.Middleware("mpa-service"))
 
 	// Security and operational middleware
-	e.Use(middleware.Logger())
+	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
 	// Request timeout middleware (prevent slow loris attacks)
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+	e.Use(middleware.ContextTimeoutWithConfig(middleware.ContextTimeoutConfig{
 		Timeout: 30 * time.Second,
 	}))
 
