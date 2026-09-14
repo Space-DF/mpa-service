@@ -30,6 +30,7 @@ import (
 	"github.com/Space-DF/mpa-service/internal/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/handlers"
 	"github.com/Space-DF/mpa-service/internal/protocols/lorawan"
+	nonlorawan "github.com/Space-DF/mpa-service/internal/protocols/non-lorawan"
 	mqttprotocol "github.com/Space-DF/mpa-service/internal/protocols/transport/mqtt"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/socketio"
 	"github.com/Space-DF/mpa-service/internal/protocols/transport/websocket"
@@ -157,6 +158,14 @@ func runServe(cmd *cobra.Command, args []string) {
 		transportCount++
 	}
 
+	// 4. API HTTP Transport for non-LoRaWAN devices
+	if cfg.Protocols.API.Enabled {
+		apiHandler := nonlorawan.NewHandler(deviceService, logger)
+		handlerManager.Register(apiHandler)
+		logger.Infof("Registered API transport handler at path: %s", apiHandler.Path())
+		transportCount++
+	}
+
 	// 2. WebSocket Transport
 	if cfg.Protocols.WebSocket.Enabled {
 		wsHandler := websocket.NewHandler(deviceService, websocket.Config{
@@ -243,12 +252,12 @@ func runServe(cmd *cobra.Command, args []string) {
 	e.Use(otelecho.Middleware("mpa-service"))
 
 	// Security and operational middleware
-	e.Use(middleware.Logger())
+	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
 	// Request timeout middleware (prevent slow loris attacks)
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+	e.Use(middleware.ContextTimeoutWithConfig(middleware.ContextTimeoutConfig{
 		Timeout: 30 * time.Second,
 	}))
 

@@ -32,6 +32,7 @@ type ProtocolsConfig struct {
 	ChirpStack ChirpStackConfig   `mapstructure:"chirpstack"`
 	TTN        TTNConfig          `mapstructure:"ttn"`
 	Helium     HeliumConfig       `mapstructure:"helium"`
+	API        APIConfig          `mapstructure:"api"`
 }
 
 // Protocol-specific configurations
@@ -65,6 +66,10 @@ type TTNConfig struct {
 
 type HeliumConfig struct {
 	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_HELIUM_ENABLED"`
+}
+
+type APIConfig struct {
+	Enabled bool `mapstructure:"enabled" env:"PROTOCOLS_API_ENABLED"`
 }
 
 // LoRaWANConfig defines configuration for LoRaWAN providers
@@ -153,6 +158,7 @@ func setDefaults(vp *viper.Viper) {
 	vp.SetDefault("protocols.chirpstack.enabled", false)
 	vp.SetDefault("protocols.ttn.enabled", false)
 	vp.SetDefault("protocols.helium.enabled", false)
+	vp.SetDefault("protocols.api.enabled", true)
 
 	// OpenTelemetry defaults
 	vp.SetDefault("opentelemetry.enabled", false)
