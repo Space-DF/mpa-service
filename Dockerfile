@@ -4,6 +4,11 @@
 # https://hub.docker.com/_/golang
 FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS builder
 
+# The base image's CA bundle can lag Debian's; the runtime stage copies it.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create and change to the app directory.
 WORKDIR /app
 
